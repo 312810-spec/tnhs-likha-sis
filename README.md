@@ -1,169 +1,36 @@
-================================================================================
-          TINGUB NATIONAL HIGH SCHOOL INFORMATION SYSTEM (SIS)
-              DO 015, s. 2026 ARCHITECTURE & DEVELOPMENT PLAN
-================================================================================
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-1. EXECUTIVE SUMMARY & POLICY COMPLIANCE
---------------------------------------------------------------------------------
-- Target Institution: Tingub National High School (JHS & SHS).
-- System Purpose: Multi-platform, offline-first School Information System (SIS) 
-  for managing student data, class records, report cards, approval pipelines, 
-  and official DepEd school forms.
-- Governing Policy: DepEd Order No. 015, s. 2026 (Revised Guidelines on 
-  Classroom Assessment, Grading System, and Awards and Recognition for the 
-  K to 12 Basic Education Program).
-- Core Policy Requirements Implemented:
-  * Zero-Based / Raw Percentage Computation: Eliminates legacy DO 8, s. 2015 
-    arbitrary transmutation tables.
-  * Component Weightings (DO 015, s. 2026):
-    - JHS & SHS Core / Academic Electives: 
-      20% Written Works (WW), 50% Performance Tasks (PT), 30% Examinations (EX)
-    - SHS Field Exposure / Creative Production: 
-      15% Written Works (WW), 70% Performance Tasks (PT), 15% Examinations (EX)
-    - SHS Research Electives, Design & Innovation: 
-      40% Written Works (WW), 60% Performance Tasks (PT), 0% Examinations
-    - SHS Work Immersion: 
-      20% Written Works (WW), 80% Performance Tasks (PT)
-  * Formative Data Isolation: Non-graded formative entries (ESRU model) 
-    tracked in formative_logs without altering quarterly GPA.
-- Infrastructure Strategy: 100% Free-Tier Architecture (Vercel + Supabase 
-  PostgreSQL/Auth + Dexie.js for local IndexedDB offline storage).
+## Getting Started
 
+First, run the development server:
 
-2. TECHNICAL STACK & OFFLINE ARCHITECTURE
---------------------------------------------------------------------------------
-               +----------------------------------------------+
-               |      Tingub NHS Web/PWA Client (Vercel)      |
-               +----------------------+-----------------------+
-                                      |
-            +-------------------------+-------------------------+
-            |                                                   |
-            v                                                   v
-+-------------------------------+               +-------------------------------+
-|   Online Mode (Supabase API)  |               |  Offline Mode (Dexie.js DB)   |
-|  - Row-Level Security (RLS)   |               |  - IndexedDB Local Storage    |
-|  - Auth & Role Management     |               |  - Immediate Local Read/Write |
-+---------------+---------------+               +---------------+---------------+
-                |                                               |
-                +-------------------------+---------------------+
-                                          |
-                                          | (Background Sync Protocol)
-                                          v
-                           +------------------------------+
-                           |   Approval Pipeline & Forms  |
-                           |  - Teacher -> MT -> Admin    |
-                           |  - SF1, SF5, SF9, SF10 Export|
-                           +------------------------------+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-3. APPROVAL PIPELINE WORKFLOW
---------------------------------------------------------------------------------
-1. Subject Teacher / Class Adviser:
-   - Enters raw scores for Written Works, Performance Tasks, and Examinations 
-     into the offline-capable E-Class Record UI.
-   - Generates quarterly summaries and initial Formative/Summative diagnostic 
-     logs.
-2. Master Teacher / Department Head:
-   - Reviews grade entries via the MT Verification Dashboard.
-   - Inspects flags for out-of-bound scores, missing entries, or weighting 
-     errors under DO 015, s. 2026.
-   - Action: Approve (locks records and forwards to Admin) or Reject 
-     (returns with review notes to Teacher).
-3. ICT Coordinator / School Head:
-   - Executes administrative final lock.
-   - Triggers automated compilation for official DepEd School Forms 
-     (SF1, SF2, SF5, SF9 / Learner Progress Report Card, SF10 / Permanent 
-     Record) and Student ID rendering.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-4. SCOPED DEVELOPMENT PROMPTS (STEP-BY-STEP EXECUTION)
---------------------------------------------------------------------------------
+## Learn More
 
-[ PROMPT 1: Supabase Database Schema & DO 015, s. 2026 Config ]
+To learn more about Next.js, take a look at the following resources:
 
-Apply the updated DepEd Order No. 015, s. 2026 grading rules to the Supabase 
-database schema for Tingub NHS SIS:
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-1) Update or create the `subject_weights` configuration table to store 
-   component weights per subject classification:
-   - JHS & SHS Core / Academic: 
-     written_work_weight = 0.20, performance_task_weight = 0.50, 
-     examination_weight = 0.30.
-   - SHS Field Exposure / Creative: 
-     written_work_weight = 0.15, performance_task_weight = 0.70, 
-     examination_weight = 0.15.
-   - SHS Research Electives & Design: 
-     written_work_weight = 0.40, performance_task_weight = 0.60, 
-     examination_weight = 0.00.
-   - SHS Work Immersion: 
-     written_work_weight = 0.20, performance_task_weight = 0.80, 
-     examination_weight = 0.00.
-2) Create the `class_record_grades` schema supporting raw scores, learner 
-   total raw scores, highest possible scores, and component percentage scores.
-3) Ensure non-graded formative assessments are isolated in a separate 
-   `formative_logs` table and excluded from final quarterly grade computations.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Deploy on Vercel
 
-[ PROMPT 2: Offline E-Class Record & Calculation Engine (Dexie.js) ]
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Update the front-end calculation engine and Dexie.js offline store in 
-public/js/grader.js for Tingub NHS SIS:
-
-1) Implement the DO 015, s. 2026 raw percentage calculation logic:
-   - Raw Score % = (Learner Total Raw Score / Highest Possible Score) * 100
-   - Weighted Score = Raw Score % * Component Weight
-   - Final Quarterly Grade = Sum of Weighted Scores (WW + PT + EX).
-2) Do not apply legacy DO 8, s. 2015 transmutation tables. Compute final 
-   quarterly grades directly from raw weighted totals.
-3) Store all local changes in Dexie.js IndexedDB first, with a sync queue 
-   manager that auto-pushes queued updates to Supabase whenever an active 
-   internet connection is detected.
-
-
-[ PROMPT 3: Master Teacher Review & Approval Pipeline UI ]
-
-Implement the approval pipeline and verification UI for Tingub NHS SIS:
-
-1) Build the Master Teacher (MT) verification dashboard displaying pending 
-   quarterly class records submitted by subject teachers.
-2) Include validation checks that highlight missing summative assessment 
-   scores, invalid component weightings, or missing performance tasks before 
-   sign-off.
-3) Add Approve and Reject controls with a text feedback box for rejection 
-   notes. Rejection unlocks the record for teacher edit; approval advances 
-   the status to "MT_APPROVED" and locks record fields.
-
-
-[ PROMPT 4: DepEd School Form Exporters & Student ID Engine ]
-
-Create the school forms exporter and printable engine for Tingub NHS SIS:
-
-1) Implement printable export generators for DepEd School Forms:
-   - SF1 (School Register)
-   - SF5 (Report on Promotion and Level of Proficiency)
-   - SF9 (Learner Progress Report Card following DO 015, s. 2026 raw score 
-     grading scale)
-   - SF10 (Learner's Permanent Academic Record)
-2) Integrate student anecdotal records logging into the student profile 
-   module.
-3) Implement an automated student ID card generator layout with QR code 
-   rendering linking to student validation tokens in Supabase.
-
-
-5. IMPLEMENTATION ROADMAP & MILESTONES
---------------------------------------------------------------------------------
-+---------+--------------------+-----------------------------------+-----------+
-| Phase   | Core Objective     | Key Deliverable                   | Target    |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 1 | Database & Rules   | Configure Supabase schemas with   | Weeks 1-2 |
-|         |                    | DO 015, s. 2026 weights and RLS   |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 2 | Offline Grader     | Build Dexie.js offline store and  | Weeks 3-4 |
-|         |                    | raw score calculation engine      |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 3 | Approval Engine    | Deploy MT review dashboard,       | Weeks 5-6 |
-|         |                    | validation flags, and lock states |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 4 | Forms & IDs        | Build print layouts for SF1, SF5, | Weeks 7-8 |
-|         |                    | SF9, SF10, and Student IDs        |           |
-+---------+--------------------+-----------------------------------+-----------+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

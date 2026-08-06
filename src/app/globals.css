@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tingub-blue: #1B3B8C;
+  --color-tingub-green: #1E6B3A;
+  --color-tingub-gold: #F5A623;
+  --color-tingub-orange: #E8720C;
+  --color-ink: #1A1A1A;
+  --color-paper: #FAFAF8;
+  --font-sans: var(--font-inter), Inter, sans-serif;
+  --radius-lg: 8px;
+  --radius-md: 8px;
+  --radius-sm: 8px;
+  --radius: 8px;
+}
+
+:root {
+  --background: #FAFAF8;
+  --foreground: #1A1A1A;
+}
+
+body {
+  background-color: #FAFAF8;
+  color: #1A1A1A;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Strict Typography Weights according to Design Token Specifications */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+}
+
+label, button {
+  font-weight: 500;
+}
+
+p, span, div, input, select, textarea {
+  font-weight: 400;
+}
+
+/* Flat design constraint enforcement: no drop shadows, no gradients (except explicit login sunburst) */
+.flat-surface {
+  box-shadow: none !important;
+  background-image: none;
+}
