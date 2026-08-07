@@ -42,9 +42,18 @@ async function ensureToken(student: FormStudent): Promise<string> {
         };
       };
     };
-    await client.from("students").update({ validation_token: token }).eq("id", student.id);
-  } catch {
+    const { error } = await client
+      .from("students")
+      .update({ validation_token: token })
+      .eq("id", student.id);
+    if (error) {
+      throw new Error(error instanceof Error ? error.message : "Failed to mirror token to Supabase.");
+    }
+  } catch (err) {
     // Offline — the token is safe locally and will sync later in production.
+    if (typeof window !== "undefined" && navigator.onLine) {
+      console.warn("Token mirror to Supabase failed:", err);
+    }
   }
   return token;
 }
@@ -64,6 +73,7 @@ export function StudentIdCard() {
   const [student, setStudent] = useState<FormStudent | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -83,13 +93,19 @@ export function StudentIdCard() {
   useEffect(() => {
     if (!studentId) return;
     let active = true;
+    setTokenError(null);
     (async () => {
-      const list = await getStudents();
-      const resolved = list.find((x) => x.id === studentId) || null;
-      const tok = resolved ? await ensureToken(resolved) : null;
-      if (!active) return;
-      setStudent(resolved);
-      setToken(tok);
+      try {
+        const list = await getStudents();
+        const resolved = list.find((x) => x.id === studentId) || null;
+        const tok = resolved ? await ensureToken(resolved) : null;
+        if (!active) return;
+        setStudent(resolved);
+        setToken(tok);
+      } catch (err) {
+        if (!active) return;
+        setTokenError(err instanceof Error ? err.message : "Unable to generate validation token.");
+      }
     })();
     return () => {
       active = false;
@@ -151,6 +167,12 @@ export function StudentIdCard() {
   return (
     <Card title="Student ID Card" subtitle="QR code links to the learner's validation token stored on their row">
       {select}
+
+      {tokenError && (
+        <p className="p-3 bg-tingub-orange/10 border border-tingub-orange/40 rounded-[8px] text-sm text-tingub-orange font-normal">
+          {tokenError}
+        </p>
+      )}
 
       {!student || !token ? (
         <p className="text-sm text-ink/70 font-normal">Loading ID card...</p>

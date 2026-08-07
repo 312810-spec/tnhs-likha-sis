@@ -3,15 +3,35 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SunburstBackground } from "@/components/ui/SunburstBackground";
+import { supabase } from "@/lib/supabase";
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("teacher");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Signing in as ${role}...`);
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Invalid credentials.");
+      }
+      // On success, Supabase Auth updates the session automatically.
+    } catch {
+      setErrorMessage("Sign-in service unavailable. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,10 +102,16 @@ export const LoginForm: React.FC = () => {
             />
           </div>
 
+          {errorMessage && (
+            <p className="p-3 bg-tingub-orange/10 border border-tingub-orange/40 rounded-[8px] text-sm text-tingub-orange font-normal">
+              {errorMessage}
+            </p>
+          )}
+
           <div className="pt-2">
             {/* Button names explicit action: "Sign in to account" */}
-            <Button variant="primary" size="lg" type="submit" className="w-full">
-              Sign in to account
+            <Button variant="primary" size="lg" type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in to account"}
             </Button>
           </div>
         </form>

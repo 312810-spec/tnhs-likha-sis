@@ -85,6 +85,7 @@ export function StakeholderPortal() {
   const [sf9Data, setSf9Data] = useState<FormLearnerResult | null>(null);
   const [sf9Loading, setSf9Loading] = useState(false);
   const [sf9Error, setSf9Error] = useState<string | null>(null);
+  const [linksError, setLinksError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadStudents = useCallback(async () => {
@@ -94,7 +95,13 @@ export function StakeholderPortal() {
 
   const loadLinks = useCallback(async () => {
     setLoading(true);
-    const links = await fetchStakeholderLinks();
+    setLinksError(null);
+    let links: { student_id: string; relationship: string }[] = [];
+    try {
+      links = await fetchStakeholderLinks();
+    } catch (err) {
+      setLinksError(err instanceof Error ? err.message : "Unable to load linked learners.");
+    }
     if (allStudents.length > 0) {
       const byId = new Map(allStudents.map((s) => [s.id, s]));
       if (links.length > 0) {
@@ -407,6 +414,12 @@ export function StakeholderPortal() {
           demo roster. In production, Supabase RLS returns only the students
           tied to the logged-in stakeholder.
         </div>
+      )}
+
+      {linksError && (
+        <p className="p-3 bg-tingub-orange/10 border border-tingub-orange/40 rounded-[8px] text-sm text-tingub-orange font-normal">
+          {linksError}
+        </p>
       )}
 
       {loading ? (

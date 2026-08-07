@@ -57,26 +57,34 @@ export const EnrollmentUploadForm: React.FC = () => {
 
   // Dynamic sections from database
   const [sections, setSections] = useState<Partial<Section>[]>(DEFAULT_SECTIONS);
+  const [sectionsError, setSectionsError] = useState<string | null>(null);
 
   // Fetch sections from Supabase on mount
   useEffect(() => {
+    let active = true;
     async function loadSections() {
       try {
         const client = supabase as unknown as {
           from: (table: string) => { select: (query: string) => Promise<{ data: Section[] | null; error: unknown }> };
         };
         const { data, error } = await client.from("sections").select("*");
+        if (!active) return;
         if (!error && data && data.length > 0) {
           setSections(data);
           setSectionId(data[0].id || "");
+          setSectionsError(null);
         } else {
           setSectionId(DEFAULT_SECTIONS[0]?.id || "");
+          setSectionsError(null);
         }
-      } catch {
+      } catch (err) {
+        if (!active) return;
         setSectionId(DEFAULT_SECTIONS[0]?.id || "");
+        setSectionsError(err instanceof Error ? err.message : "Unable to load sections from the registry.");
       }
     }
     loadSections();
+    return () => { active = false; };
   }, []);
 
   // Filter sections by selected grade level
@@ -609,6 +617,12 @@ export const EnrollmentUploadForm: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {sectionsError && (
+              <p className="p-3 bg-tingub-orange/10 border border-tingub-orange/40 rounded-[8px] text-sm text-tingub-orange font-normal">
+                {sectionsError}
+              </p>
+            )}
 
             {/* Field: Reviewer Notes */}
             <div>
