@@ -1,4 +1,4 @@
-import { db, LocalClassRecordGrade, SyncQueueItem } from "./db";
+import { db, LocalClassRecordGrade } from "./db";
 import { supabase } from "./supabase";
 
 let isSyncing = false;
@@ -20,12 +20,12 @@ export async function saveGradeRecordOffline(gradeRecord: LocalClassRecordGrade)
   const existingQueue = await db.sync_queue
     .where("table_name")
     .equals("class_record_grades")
-    .filter((item) => item.payload.id === updatedRecord.id && item.status !== "SUCCESS")
+    .filter((item) => (item.payload as Record<string, unknown>).id === updatedRecord.id && item.status !== "SUCCESS")
     .first();
 
   if (existingQueue && existingQueue.id) {
     await db.sync_queue.update(existingQueue.id, {
-      payload: updatedRecord,
+      payload: updatedRecord as unknown as Record<string, unknown>,
       timestamp: new Date().toISOString(),
       status: "PENDING",
     });
@@ -33,7 +33,7 @@ export async function saveGradeRecordOffline(gradeRecord: LocalClassRecordGrade)
     await db.sync_queue.add({
       table_name: "class_record_grades",
       action: "UPSERT",
-      payload: updatedRecord,
+      payload: updatedRecord as unknown as Record<string, unknown>,
       timestamp: new Date().toISOString(),
       status: "PENDING",
       retry_count: 0,
@@ -78,12 +78,13 @@ export async function processSyncQueue(): Promise<{ processed: number; succeeded
 
       try {
         if (item.table_name === "class_record_grades" && item.action === "UPSERT") {
-          // Prepare payload for Supabase (strip Dexie local 'synced' field)
-          const { synced, ...supabasePayload } = item.payload;
+          const supabasePayload = { ...item.payload };
+          delete supabasePayload.synced;
 
-          const { error } = await supabase
-            .from("class_record_grades")
-            .upsert(supabasePayload as any, { onConflict: "student_id,subject_id,quarter" });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error } = await (supabase.from("class_record_grades") as any).upsert(supabasePayload, {
+            onConflict: "student_id,subject_id,quarter",
+          });
 
           if (error) {
             throw error;
@@ -93,19 +94,21 @@ export async function processSyncQueue(): Promise<{ processed: number; succeeded
           await db.sync_queue.update(item.id, { status: "SUCCESS", last_error: undefined });
 
           // Update Dexie grade record synced flag to 1
-          if (supabasePayload.id) {
-            await db.class_record_grades.update(supabasePayload.id, { synced: 1 });
+          const recordId = (supabasePayload as { id?: string }).id;
+          if (recordId) {
+            await db.class_record_grades.update(recordId, { synced: 1 });
           }
 
           succeeded++;
         }
-      } catch (err: any) {
-        console.warn(`Sync failed for item ${item.id}:`, err?.message || err);
+      } catch (err: unknown) {
+        const errorObj = err as { message?: string };
+        console.warn(`Sync failed for item ${item.id}:`, errorObj?.message || err);
         failed++;
         await db.sync_queue.update(item.id, {
           status: "FAILED",
           retry_count: item.retry_count + 1,
-          last_error: err?.message || String(err),
+          last_error: errorObj?.message || String(err),
         });
       }
     }

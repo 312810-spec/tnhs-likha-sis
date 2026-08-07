@@ -30,7 +30,7 @@ export interface SyncQueueItem {
   id?: number;
   table_name: string;
   action: "UPSERT" | "DELETE";
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp: string;
   status: "PENDING" | "SYNCING" | "FAILED" | "SUCCESS";
   retry_count: number;

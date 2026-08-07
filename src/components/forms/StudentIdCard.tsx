@@ -93,9 +93,9 @@ export function StudentIdCard() {
   useEffect(() => {
     if (!studentId) return;
     let active = true;
-    setTokenError(null);
     (async () => {
       try {
+        setTokenError(null);
         const list = await getStudents();
         const resolved = list.find((x) => x.id === studentId) || null;
         const tok = resolved ? await ensureToken(resolved) : null;

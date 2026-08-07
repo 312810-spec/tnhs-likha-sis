@@ -1,4 +1,4 @@
-import { SubjectClassification, GradingMode, GradingModeEnum } from "@/types/database.types";
+import { SubjectClassification, GradingModeEnum } from "@/types/database.types";
 
 export interface SubjectWeight {
   classification: SubjectClassification;

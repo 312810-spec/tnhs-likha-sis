@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, initializeDexieDefaults, LocalClassRecordGrade, LocalStudent, LocalSubject, LocalSection } from "@/lib/db";
-import { computeFullGradeRecord, SubjectWeight, TransmutationEntry } from "@/lib/gradingEngine";
+import { db, initializeDexieDefaults, LocalClassRecordGrade, LocalStudent } from "@/lib/db";
+import { computeFullGradeRecord, SubjectWeight } from "@/lib/gradingEngine";
 import { saveGradeRecordOffline, processSyncQueue, initOnlineSyncListener } from "@/lib/syncQueue";
 import { GradingModeEnum, GradeStatusEnum, UserRole } from "@/types/database.types";
 import { Button } from "@/components/ui/Button";
@@ -41,12 +41,17 @@ export function GradingEngineUI() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [quarter, setQuarter] = useState<number>(1);
 
+  const activeSectionId = selectedSectionId || (sections && sections.length > 0 ? sections[0].id : "");
+  const activeSubjectId = selectedSubjectId || (subjects && subjects.length > 0 ? subjects[0].id : "");
+
   // Active User / RLS Simulation States
   const [userRole, setUserRole] = useState<UserRole>("teacher");
   const [isAssignedTeacher, setIsAssignedTeacher] = useState<boolean>(true);
 
   // Online & Sync States
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
@@ -61,7 +66,6 @@ export function GradingEngineUI() {
   // Initialize Dexie defaults and connectivity listeners
   useEffect(() => {
     initializeDexieDefaults();
-    setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
 
     const cleanupSync = initOnlineSyncListener();
 
@@ -78,18 +82,8 @@ export function GradingEngineUI() {
     };
   }, []);
 
-  // Auto select initial section & subject
-  useEffect(() => {
-    if (sections && sections.length > 0 && !selectedSectionId) {
-      setSelectedSectionId(sections[0].id);
-    }
-    if (subjects && subjects.length > 0 && !selectedSubjectId) {
-      setSelectedSubjectId(subjects[0].id);
-    }
-  }, [sections, subjects, selectedSectionId, selectedSubjectId]);
-
   // Derived current Subject & Weight
-  const currentSubject = subjects?.find((s) => s.id === selectedSubjectId);
+  const currentSubject = subjects?.find((s) => s.id === activeSubjectId);
   const currentSubjectWeight: SubjectWeight = subjectWeightsList?.find(
     (w) => w.classification === currentSubject?.classification
   ) || {
@@ -104,15 +98,17 @@ export function GradingEngineUI() {
   const gradingMode: GradingModeEnum = currentSchoolSetting?.grading_mode || "adjusted_transmutation";
 
   // Filter students for current selected section
-  const sectionStudents = students?.filter((s) => s.section_id === selectedSectionId) || [];
+  const sectionStudents = React.useMemo(() => {
+    return students?.filter((s) => s.section_id === activeSectionId) || [];
+  }, [students, activeSectionId]);
 
   // Load existing grade records from Dexie whenever section, subject, or quarter changes
   const loadExistingGrades = useCallback(async () => {
-    if (!selectedSectionId || !selectedSubjectId || !sectionStudents.length) return;
+    if (!activeSectionId || !activeSubjectId) return;
 
     const existingRecords = await db.class_record_grades
       .where("subject_id")
-      .equals(selectedSubjectId)
+      .equals(activeSubjectId)
       .filter((r) => r.quarter === quarter)
       .toArray();
 
@@ -125,11 +121,13 @@ export function GradingEngineUI() {
 
     const newScoresMap: Record<string, StudentScoreRow> = {};
 
-    sectionStudents.forEach((std) => {
+    const activeStudents = students?.filter((s) => s.section_id === activeSectionId) || [];
+
+    activeStudents.forEach((std) => {
       const existing = recordByStudentId.get(std.id);
       newScoresMap[std.id] = {
         student: std,
-        gradeRecordId: existing?.id || `rec-${std.id}-${selectedSubjectId}-Q${quarter}`,
+        gradeRecordId: existing?.id || `rec-${std.id}-${activeSubjectId}-Q${quarter}`,
         written_work_raw: existing?.written_work_raw ?? 85,
         written_work_highest: existing?.written_work_highest ?? 100,
         performance_task_raw: existing?.performance_task_raw ?? 88,
@@ -145,10 +143,18 @@ export function GradingEngineUI() {
     });
 
     setScoresMap(newScoresMap);
-  }, [selectedSectionId, selectedSubjectId, quarter, sectionStudents]);
+  }, [activeSectionId, activeSubjectId, quarter, students]);
 
   useEffect(() => {
-    loadExistingGrades();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        loadExistingGrades();
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [loadExistingGrades]);
 
   // Handle Score Input Change
@@ -318,8 +324,9 @@ export function GradingEngineUI() {
         `Sync execution complete: ${res.succeeded} items synced successfully, ${res.failed} failed.`
       );
       await loadExistingGrades();
-    } catch (err: any) {
-      setSyncFeedback(`Sync error: ${err?.message || err}`);
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string };
+      setSyncFeedback(`Sync error: ${errorObj?.message || String(err)}`);
     } finally {
       setIsSyncing(false);
       setTimeout(() => setSyncFeedback(null), 5000);

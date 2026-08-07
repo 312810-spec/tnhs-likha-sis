@@ -29,3 +29,16 @@ Design tokens (set these up in Prompt 1, then reuse everywhere):
 
 Roles: teacher, master_teacher, ict_coordinator, principal, stakeholder.
 Full definitions are in PLAN.md.
+
+# Visual Layout & Component Rules (TNHS LIKHA-SIS)
+
+Theme & Colors:
+- Primary Sidebar: tingub-blue `#1B3B8C` (Dark variant `#12265C` for background). Active item pill: tingub-gold `#F5A623` with ink `#1A1A1A` text, or white text with flat highlight.
+- Header Bar: tingub-green `#1E6B3A`. Status pill: "TINGUB NATIONAL HIGH SCHOOL" on paper `#FAFAF8`.
+- Content Area Background: paper `#FAFAF8`. Cards & Tables: Flat `#FFFFFF` with 8px corner radius and 1px border (`#E5E7EB`). No drop shadows or gradients.
+- Badges & Accents: Success/Passed = tingub-green `#1E6B3A`, Pending/Alert = tingub-gold `#F5A623`, Warnings/SARDO = tingub-orange `#E8720C`.
+- Typography: Inter font. Weight 700 headings, 500 buttons/labels, 400 body text.
+
+Layout Shell Structure:
+- Left Sidebar Navigation (14 Items): Dashboard, Learner Registry, ID Generator, Attendance Center, Learning Resources, Grade Center, Health & Nutrition, Remarks & Comments, Requirements Tracker, Forms Automation, Reports & Analytics, School Calendar, Backup & Restore, School Settings.
+- Top Header: Hamburger menu button, view breadcrumb title, school identifier pill, live clock (Date & Time format: "TUESDAY, JUNE 9, 2026 | 10:06:54 PM"), and theme toggle icon.
