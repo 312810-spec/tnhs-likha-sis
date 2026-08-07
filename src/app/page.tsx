@@ -9,10 +9,32 @@ import { EnrollmentUploadForm } from "@/components/enrollment/EnrollmentUploadFo
 import { LoginForm } from "@/components/auth/LoginForm";
 import { GradingEngineUI } from "@/components/grading/GradingEngineUI";
 import { MasterTeacherReviewDashboard } from "@/components/review/MasterTeacherReviewDashboard";
+import {
+  AnecdotalRecordsView,
+  ANECDOTAL_SAMPLE_STUDENTS,
+} from "@/components/anecdotal/AnecdotalRecordsView";
+import { SchoolFormsDashboard } from "@/components/forms/SchoolFormsDashboard";
+import { PrincipalOverviewDashboard } from "@/components/principal/PrincipalOverviewDashboard";
+import { AccountManagementForm } from "@/components/ict/AccountManagementForm";
+import { StakeholderPortal } from "@/components/stakeholder/StakeholderPortal";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"theme" | "login" | "enrollment" | "grading" | "review">("grading");
+    const [activeTab, setActiveTab] = useState<
+    | "theme"
+    | "login"
+    | "enrollment"
+    | "grading"
+    | "review"
+    | "anecdotal"
+    | "forms"
+    | "principal"
+    | "ict"
+    | "stakeholder"
+  >("forms");
   const [sampleStatus, setSampleStatus] = useState<"pending" | "approved" | "warning">("pending");
+  const [anecdotalStudentId, setAnecdotalStudentId] = useState(
+    ANECDOTAL_SAMPLE_STUDENTS[0].id
+  );
 
   return (
     <div className="min-h-screen bg-paper text-ink flex flex-col">
@@ -49,6 +71,20 @@ export default function Home() {
               Master Teacher Review
             </Button>
             <Button
+              variant={activeTab === "forms" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("forms")}
+            >
+              Forms & IDs
+            </Button>
+            <Button
+              variant={activeTab === "anecdotal" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("anecdotal")}
+            >
+              Anecdotal Records
+            </Button>
+            <Button
               variant={activeTab === "theme" ? "primary" : "secondary"}
               size="sm"
               onClick={() => setActiveTab("theme")}
@@ -62,12 +98,33 @@ export default function Home() {
             >
               Enrollment Module
             </Button>
-            <Button
+                        <Button
               variant={activeTab === "login" ? "primary" : "secondary"}
               size="sm"
               onClick={() => setActiveTab("login")}
             >
               View Login Screen
+            </Button>
+            <Button
+              variant={activeTab === "principal" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("principal")}
+            >
+              Principal Overview
+            </Button>
+            <Button
+              variant={activeTab === "ict" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("ict")}
+            >
+              ICT Account Management
+            </Button>
+            <Button
+              variant={activeTab === "stakeholder" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("stakeholder")}
+            >
+              Stakeholder Portal
             </Button>
           </div>
         </div>
@@ -251,6 +308,38 @@ export default function Home() {
           /* Master Teacher Review & Approval Pipeline Tab */
           <div className="space-y-4">
             <MasterTeacherReviewDashboard />
+          </div>
+        ) : activeTab === "forms" ? (
+          /* Forms & ID Module Tab (SF1, SF2/SF4, SF5, SF6, SF9, SF10, Student ID) */
+          <SchoolFormsDashboard />
+        ) : activeTab === "anecdotal" ? (
+          /* Anecdotal Records Module Tab (hosts the search/filter view per learner) */
+          <div className="space-y-4">
+            <AnecdotalRecordsView
+              studentId={anecdotalStudentId}
+              studentName={
+                ANECDOTAL_SAMPLE_STUDENTS.find(
+                  (s) => s.id === anecdotalStudentId
+                )?.full_name
+              }
+              students={ANECDOTAL_SAMPLE_STUDENTS}
+              onStudentChange={setAnecdotalStudentId}
+            />
+          </div>
+                ) : activeTab === "principal" ? (
+          /* Principal Executive Overview (READ ONLY) */
+          <div className="space-y-4">
+            <PrincipalOverviewDashboard />
+          </div>
+        ) : activeTab === "ict" ? (
+          /* ICT Coordinator Account Management */
+          <div className="space-y-4">
+            <AccountManagementForm />
+          </div>
+        ) : activeTab === "stakeholder" ? (
+          /* Stakeholder Portal (read-only SF9 + anecdotal for linked learners) */
+          <div className="space-y-4">
+            <StakeholderPortal />
           </div>
         ) : (
           /* Login Screen Tab */

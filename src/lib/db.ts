@@ -49,6 +49,12 @@ export interface LocalStudent {
   full_name: string;
   section_id: string;
   grade_level: string;
+  /** Opaque token rendered into the learner ID card QR code. */
+  validation_token?: string | null;
+  token_issued_at?: string | null;
+  sex?: string | null;
+  birthdate?: string | null;
+  address?: string | null;
 }
 
 export interface LocalSubject {
@@ -144,10 +150,54 @@ export async function initializeDexieDefaults() {
     const studentsCount = await db.students.count();
     if (studentsCount === 0) {
       await db.students.bulkAdd([
-        { id: "std-1", lrn: "109823471001", full_name: "Alvarez, Mateo Cruz", section_id: "sec-7a", grade_level: "Grade 7" },
-        { id: "std-2", lrn: "109823471002", full_name: "Bautista, Chloe Reyes", section_id: "sec-7a", grade_level: "Grade 7" },
-        { id: "std-3", lrn: "109823471003", full_name: "Dela Cruz, Juan Pedro", section_id: "sec-7a", grade_level: "Grade 7" },
-        { id: "std-4", lrn: "109823471004", full_name: "Garcia, Sophia Santos", section_id: "sec-7a", grade_level: "Grade 7" },
+        {
+          id: "std-1",
+          lrn: "109823471001",
+          full_name: "Alvarez, Mateo Cruz",
+          section_id: "sec-7a",
+          grade_level: "Grade 7",
+          sex: "Male",
+          birthdate: "2012-03-14",
+          address: "Purok 2, Tingub, Mandaue City",
+          validation_token: "demo-token-std-1-1b3b8c",
+          token_issued_at: new Date().toISOString(),
+        },
+        {
+          id: "std-2",
+          lrn: "109823471002",
+          full_name: "Bautista, Chloe Reyes",
+          section_id: "sec-7a",
+          grade_level: "Grade 7",
+          sex: "Female",
+          birthdate: "2011-11-02",
+          address: "Purok 5, Tingub, Mandaue City",
+          validation_token: "demo-token-std-2-1e6b3a",
+          token_issued_at: new Date().toISOString(),
+        },
+        {
+          id: "std-3",
+          lrn: "109823471003",
+          full_name: "Dela Cruz, Juan Pedro",
+          section_id: "sec-7a",
+          grade_level: "Grade 7",
+          sex: "Male",
+          birthdate: "2012-01-27",
+          address: "Purok 1, Tingub, Mandaue City",
+          validation_token: "demo-token-std-3-f5a623",
+          token_issued_at: new Date().toISOString(),
+        },
+        {
+          id: "std-4",
+          lrn: "109823471004",
+          full_name: "Garcia, Sophia Santos",
+          section_id: "sec-7a",
+          grade_level: "Grade 7",
+          sex: "Female",
+          birthdate: "2011-08-19",
+          address: "Purok 3, Tingub, Mandaue City",
+          validation_token: "demo-token-std-4-e8720c",
+          token_issued_at: new Date().toISOString(),
+        },
       ]);
     }
   } catch (err) {

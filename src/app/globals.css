@@ -46,3 +46,27 @@ p, span, div, input, select, textarea {
   box-shadow: none !important;
   background-image: none;
 }
+
+/* Print-friendly DepEd form sheets.
+   `print:hidden` (Tailwind's print variant) hides each form's selectors/buttons;
+   these rules additionally strip the app header/footer and page colors so the
+   printable sheet renders cleanly on paper / as a PDF. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #1a1a1a !important;
+  }
+
+  header, footer {
+    display: none !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Keep table borders crisp on paper. */
+  table {
+    border-collapse: collapse;
+  }
+}

@@ -1,0 +1,8 @@
+# Supabase CLI configuration for TNHS LIKHA-SIS.
+# Replace project_id with your Supabase project reference before `supabase link`
+# / `supabase functions deploy create-account`.
+
+project_id = "tnhs-likha-sis"
+
+[functions.create-account]
+verify_jwt = true

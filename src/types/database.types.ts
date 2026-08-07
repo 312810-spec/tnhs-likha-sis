@@ -74,7 +74,22 @@ export interface Student {
   section_id?: string | null;
   enrollment_status: EnrollmentStatus;
   sf10_file_url?: string | null;
+  /** Opaque token rendered into the learner ID card QR code. Its presence on the
+   *  student row is what the public validation page resolves against (via the
+   *  SECURITY DEFINER RPC `get_public_student_by_token`), so a QR scan proves the
+   *  card belongs to a learner stored in the system. */
+  validation_token?: string | null;
+  token_issued_at?: string | null;
   created_at: string;
+}
+
+export interface PublicStudentValidation {
+  full_name: string;
+  lrn: string;
+  grade_level: string;
+  section_name: string | null;
+  school_year: string | null;
+  is_valid: boolean;
 }
 
 export interface StakeholderLink {
@@ -119,6 +134,18 @@ export interface FormativeLog {
   created_at: string;
 }
 
+export type AnecdotalCategory = 'behavior' | 'achievement' | 'health' | 'other';
+
+export interface AnecdotalRecord {
+  id: string;
+  student_id: string;
+  author_id?: string | null;
+  entry_date: string;
+  category: AnecdotalCategory;
+  note: string;
+  created_at: string;
+}
+
 export type EnrollmentRequestStatus = 'pending_review' | 'confirmed' | 'rejected';
 
 export interface EnrollmentRequest {
@@ -144,9 +171,15 @@ export interface Database {
       stakeholder_links: { Row: StakeholderLink; Insert: Omit<StakeholderLink, 'id' | 'created_at'>; Update: Partial<StakeholderLink>; Relationships: [] };
       class_record_grades: { Row: ClassRecordGrade; Insert: Omit<ClassRecordGrade, 'id' | 'created_at' | 'updated_at'>; Update: Partial<ClassRecordGrade>; Relationships: [] };
       formative_logs: { Row: FormativeLog; Insert: Omit<FormativeLog, 'id' | 'created_at'>; Update: Partial<FormativeLog>; Relationships: [] };
+      anecdotal_records: { Row: AnecdotalRecord; Insert: Omit<AnecdotalRecord, 'id' | 'created_at'>; Update: Partial<AnecdotalRecord>; Relationships: [] };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      get_public_student_by_token: {
+        Args: { p_token: string };
+        Returns: PublicStudentValidation[];
+      };
+    };
     Enums: {
       user_role: UserRole;
       subject_classification: SubjectClassification;
@@ -154,6 +187,7 @@ export interface Database {
       enrollment_status_enum: EnrollmentStatus;
       grade_status_enum: GradeStatus;
       enrollment_request_status: EnrollmentRequestStatus;
+      anecdotal_category: AnecdotalCategory;
     };
     CompositeTypes: { [_ in never]: never };
   };
