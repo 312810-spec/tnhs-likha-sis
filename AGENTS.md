@@ -42,3 +42,5 @@ Theme & Colors:
 Layout Shell Structure:
 - Left Sidebar Navigation (14 Items): Dashboard, Learner Registry, ID Generator, Attendance Center, Learning Resources, Grade Center, Health & Nutrition, Remarks & Comments, Requirements Tracker, Forms Automation, Reports & Analytics, School Calendar, Backup & Restore, School Settings.
 - Top Header: Hamburger menu button, view breadcrumb title, school identifier pill, live clock (Date & Time format: "TUESDAY, JUNE 9, 2026 | 10:06:54 PM"), and theme toggle icon.
+
+- SF10 Upload Processing: Accept `.xlsx` spreadsheet files in addition to standard documents. Parse `.xlsx` files using the `xlsx` (SheetJS) package to automatically extract LRN, student demographics, and past scholastic grades directly into the enrollment form.
