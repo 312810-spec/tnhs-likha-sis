@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EnrollmentUploadForm } from "@/components/enrollment/EnrollmentUploadForm";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { GradingEngineUI } from "@/components/grading/GradingEngineUI";
+import { MasterTeacherReviewDashboard } from "@/components/review/MasterTeacherReviewDashboard";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"theme" | "login">("theme");
+  const [activeTab, setActiveTab] = useState<"theme" | "login" | "enrollment" | "grading" | "review">("grading");
   const [sampleStatus, setSampleStatus] = useState<"pending" | "approved" | "warning">("pending");
 
   return (
@@ -22,21 +25,42 @@ export default function Home() {
                 TN
               </span>
               <h1 className="text-xl font-bold tracking-tight text-ink">
-                TNHS LIKHA-SIS Design System
+                TNHS LIKHA-SIS Design System & SIS Modules
               </h1>
             </div>
             <p className="text-xs text-ink/70 mt-0.5 font-normal">
-              DepEd Order No. 015, s. 2026 Compliant • Theme & Design Tokens Setup
+              DepEd Order No. 015, s. 2026 Compliant • Theme, Authentication & Offline Grading Engine
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={activeTab === "grading" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("grading")}
+            >
+              Offline Grading Engine
+            </Button>
+            <Button
+              variant={activeTab === "review" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("review")}
+            >
+              Master Teacher Review
+            </Button>
             <Button
               variant={activeTab === "theme" ? "primary" : "secondary"}
               size="sm"
               onClick={() => setActiveTab("theme")}
             >
               View Design System
+            </Button>
+            <Button
+              variant={activeTab === "enrollment" ? "primary" : "secondary"}
+              size="sm"
+              onClick={() => setActiveTab("enrollment")}
+            >
+              Enrollment Module
             </Button>
             <Button
               variant={activeTab === "login" ? "primary" : "secondary"}
@@ -51,7 +75,9 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        {activeTab === "theme" ? (
+        {activeTab === "grading" ? (
+          <GradingEngineUI />
+        ) : activeTab === "theme" ? (
           <div className="space-y-8">
             {/* 1. Color Palette Tokens */}
             <section className="space-y-3">
@@ -215,6 +241,16 @@ export default function Home() {
                 />
               </Card>
             </section>
+          </div>
+        ) : activeTab === "enrollment" ? (
+          /* Enrollment Module Tab */
+          <div className="space-y-4">
+            <EnrollmentUploadForm />
+          </div>
+        ) : activeTab === "review" ? (
+          /* Master Teacher Review & Approval Pipeline Tab */
+          <div className="space-y-4">
+            <MasterTeacherReviewDashboard />
           </div>
         ) : (
           /* Login Screen Tab */
