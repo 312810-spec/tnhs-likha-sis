@@ -1,0 +1,8 @@
+{
+  // Enable Deno only for the Edge Functions sub-directory.
+  // The TypeScript server handles the Next.js root; Deno handles supabase/functions.
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.lint": true,
+  "deno.unstable": false
+}
