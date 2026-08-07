@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { supabase } from "@/lib/supabase";
 import { Section } from "@/types/database.types";
-import { parseSF10Xlsx, SF10ParsedData } from "@/lib/sf10Parser";
+import {
+  parseSF10Xlsx,
+  SF10ParsedData,
+  SF10GradeRow,
+  SF10ScholasticRecord,
+} from "@/lib/sf10Parser";
 
 // Fallback sections list for initial setup / offline preview
 const DEFAULT_SECTIONS: Partial<Section>[] = [
@@ -20,15 +25,9 @@ const DEFAULT_SECTIONS: Partial<Section>[] = [
   { id: "sec-12-humss-a", grade_level: "Grade 12", section_name: "HUMSS A", school_year: "2026-2027" },
 ];
 
-// Pre-existing mock students for local duplicate verification when offline
-const MOCK_EXISTING_STUDENTS: Record<string, string> = {
-  "123456789012": "Maria Santos",
-  "109876543210": "Pedro Penduko",
-};
-
 // Maximum rows/columns to render in the spreadsheet preview table
 const PREVIEW_MAX_ROWS = 60;
-const PREVIEW_MAX_COLS = 12;
+const PREVIEW_MAX_COLS = 14;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Spreadsheet Preview Table
@@ -121,7 +120,7 @@ const SpreadsheetPreview: React.FC<SpreadsheetPreviewProps> = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Academic History Table
+// Academic History Table (legacy flat display)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AcademicHistoryTableProps {
@@ -147,13 +146,7 @@ const AcademicHistoryTable: React.FC<AcademicHistoryTableProps> = ({ rows }) => 
             {[r.q1, r.q2, r.q3, r.q4].map((g, qi) => (
               <td key={qi} className="px-3 py-1.5 text-center text-ink border-b border-ink/5">
                 {g != null ? (
-                  <span
-                    className={
-                      g >= 75
-                        ? "text-[#1E6B3A] font-medium"
-                        : "text-[#E8720C] font-medium"
-                    }
-                  >
+                  <span className={g >= 75 ? "text-[#1E6B3A] font-medium" : "text-[#E8720C] font-medium"}>
                     {g}
                   </span>
                 ) : (
@@ -167,6 +160,140 @@ const AcademicHistoryTable: React.FC<AcademicHistoryTableProps> = ({ rows }) => 
     </table>
   </div>
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scholastic Record Card — Grade 7 structured table
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ScholasticRecordCardProps {
+  record: SF10ScholasticRecord;
+}
+
+const ScholasticRecordCard: React.FC<ScholasticRecordCardProps> = ({ record }) => {
+  const [expanded, setExpanded] = useState(true);
+
+  const gradeCell = (g: number | undefined) =>
+    g != null ? (
+      <span className={g >= 75 ? "text-[#1E6B3A] font-medium" : "text-[#E8720C] font-medium"}>
+        {g.toFixed(g % 1 === 0 ? 0 : 2)}
+      </span>
+    ) : (
+      <span className="text-ink/30">—</span>
+    );
+
+  return (
+    <div className="rounded-[8px] border border-[#1B3B8C]/30 overflow-hidden">
+      {/* Header */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5 bg-[#1B3B8C]/8 hover:bg-[#1B3B8C]/12 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <svg
+            className={`w-3.5 h-3.5 text-[#1B3B8C] transition-transform ${expanded ? "rotate-90" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className="text-xs font-bold text-[#1B3B8C]">
+            {record.gradeLevel} Scholastic Record
+          </span>
+          <span className="text-[10px] font-normal text-ink/50">
+            ({record.grades.length} subjects)
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-ink/60 font-normal">
+          {record.schoolYear && (
+            <span>SY {record.schoolYear}</span>
+          )}
+          {record.section && (
+            <span>§ {record.section}</span>
+          )}
+        </div>
+      </button>
+
+      {/* Meta row */}
+      {expanded && (
+        <>
+          {(record.adviserName || record.section || record.schoolYear) && (
+            <div className="grid grid-cols-3 gap-0 border-b border-ink/10 text-[11px]">
+              <div className="px-3 py-1.5 bg-paper/60 border-r border-ink/10">
+                <span className="text-ink/50 block text-[10px]">Section</span>
+                <span className="font-medium text-ink">{record.section ?? "—"}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-paper/60 border-r border-ink/10">
+                <span className="text-ink/50 block text-[10px]">School Year</span>
+                <span className="font-medium text-ink">{record.schoolYear ?? "—"}</span>
+              </div>
+              <div className="px-3 py-1.5 bg-paper/60">
+                <span className="text-ink/50 block text-[10px]">Adviser</span>
+                <span className="font-medium text-ink truncate">{record.adviserName ?? "—"}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Grades table */}
+          <div className="overflow-auto">
+            <table className="w-full text-[12px] border-collapse">
+              <thead>
+                <tr className="bg-[#1B3B8C] text-paper">
+                  <th className="px-3 py-1.5 text-left font-medium">Subject</th>
+                  <th className="px-3 py-1.5 text-center font-medium w-14">Q1</th>
+                  <th className="px-3 py-1.5 text-center font-medium w-14">Q2</th>
+                  <th className="px-3 py-1.5 text-center font-medium w-14">Q3</th>
+                  <th className="px-3 py-1.5 text-center font-medium w-14">Q4</th>
+                  <th className="px-3 py-1.5 text-center font-medium w-16">Final</th>
+                </tr>
+              </thead>
+              <tbody>
+                {record.grades.map((row: SF10GradeRow, i: number) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-[#FAFAF8]"}>
+                    <td className="px-3 py-1.5 text-ink border-b border-ink/5 font-normal">
+                      {row.subject}
+                    </td>
+                    <td className="px-3 py-1.5 text-center border-b border-ink/5">{gradeCell(row.q1)}</td>
+                    <td className="px-3 py-1.5 text-center border-b border-ink/5">{gradeCell(row.q2)}</td>
+                    <td className="px-3 py-1.5 text-center border-b border-ink/5">{gradeCell(row.q3)}</td>
+                    <td className="px-3 py-1.5 text-center border-b border-ink/5">{gradeCell(row.q4)}</td>
+                    <td className="px-3 py-1.5 text-center border-b border-ink/5 font-medium">
+                      {gradeCell(row.finalGrade)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supabase client type helpers (avoiding direct type-casting in component body)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type DbClient = {
+  from: (table: string) => {
+    select: (query: string) => {
+      eq: (col: string, val: string) => {
+        maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+        single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+      };
+      single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+    };
+    insert: (values: Record<string, unknown>) => {
+      select: () => {
+        single: () => Promise<{ data: { id: string } | null; error: unknown }>;
+      };
+    };
+    update: (values: Record<string, unknown>) => {
+      eq: (col: string, val: string) => Promise<{ error: unknown }>;
+    };
+    upsert: (values: Record<string, unknown> | Record<string, unknown>[], opts?: Record<string, unknown>) => Promise<{ error: unknown }>;
+  };
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
@@ -194,11 +321,21 @@ export const EnrollmentUploadForm: React.FC = () => {
   const [sectionId, setSectionId] = useState("");
   const [reviewerNotes, setReviewerNotes] = useState("");
 
+  // New fields from enhanced parser
+  const [elementarySchoolId, setElementarySchoolId] = useState("");
+  const [elementaryGenAve, setElementaryGenAve] = useState<number | null>(null);
+  const [scholasticRecord, setScholasticRecord] = useState<SF10ScholasticRecord | null>(null);
+
+  // Update mode — set true when LRN already exists in students table
+  const [updateMode, setUpdateMode] = useState(false);
+  const [existingStudentName, setExistingStudentName] = useState<string | null>(null);
+
   // Validation & status state
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [isCheckingLrn, setIsCheckingLrn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [gradeCommitLog, setGradeCommitLog] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{
     lrn: string;
     fullName: string;
@@ -206,6 +343,8 @@ export const EnrollmentUploadForm: React.FC = () => {
     studentId: string;
     requestId: string;
     fileUrl: string;
+    wasUpdate: boolean;
+    gradesCommitted: number;
   } | null>(null);
 
   // Dynamic sections from database
@@ -255,6 +394,9 @@ export const EnrollmentUploadForm: React.FC = () => {
     if (xlsxParsedData.sex) setSex(xlsxParsedData.sex);
     if (xlsxParsedData.address) setAddress(xlsxParsedData.address);
     if (xlsxParsedData.gradeLevel) setGradeLevel(xlsxParsedData.gradeLevel);
+    if (xlsxParsedData.elementarySchoolId) setElementarySchoolId(xlsxParsedData.elementarySchoolId);
+    if (xlsxParsedData.elementaryGenAve != null) setElementaryGenAve(xlsxParsedData.elementaryGenAve);
+    if (xlsxParsedData.scholasticRecord) setScholasticRecord(xlsxParsedData.scholasticRecord);
   }, [xlsxParsedData]);
 
   // ── Handle SF10 file selection ──────────────────────────────────────────
@@ -267,6 +409,7 @@ export const EnrollmentUploadForm: React.FC = () => {
     setXlsxParseError(null);
     setFilePreviewUrl(null);
     setErrorMessage(null);
+    setGradeCommitLog(null);
 
     const isXlsx =
       file.name.toLowerCase().endsWith(".xlsx") ||
@@ -301,38 +444,21 @@ export const EnrollmentUploadForm: React.FC = () => {
     };
   }, [filePreviewUrl]);
 
-  // ── Real-time duplicate LRN check ──────────────────────────────────────
+  // ── Real-time LRN check: detects duplicates → switches to update mode ──
   useEffect(() => {
     const timer = setTimeout(async () => {
       const cleanLrn = lrn.trim();
       if (!cleanLrn) {
         setDuplicateWarning(null);
+        setUpdateMode(false);
+        setExistingStudentName(null);
         return;
       }
 
       setIsCheckingLrn(true);
 
       try {
-        // 1. Check local mock registry
-        if (MOCK_EXISTING_STUDENTS[cleanLrn]) {
-          setDuplicateWarning(
-            `Warning: LRN "${cleanLrn}" is already assigned to active learner "${MOCK_EXISTING_STUDENTS[cleanLrn]}". Enrollment cannot be confirmed.`
-          );
-          setIsCheckingLrn(false);
-          return;
-        }
-
-        // 2. Check Supabase database table
-        const client = supabase as unknown as {
-          from: (table: string) => {
-            select: (query: string) => {
-              eq: (col: string, val: string) => {
-                maybeSingle: () => Promise<{ data: { lrn: string; full_name: string } | null; error: unknown }>;
-              };
-            };
-          };
-        };
-
+        const client = supabase as unknown as DbClient;
         const { data, error } = await client
           .from("students")
           .select("lrn, full_name")
@@ -340,14 +466,21 @@ export const EnrollmentUploadForm: React.FC = () => {
           .maybeSingle();
 
         if (!error && data) {
-          setDuplicateWarning(
-            `Warning: LRN "${cleanLrn}" is already registered to learner "${data.full_name}". Enrollment cannot be confirmed.`
-          );
+          // LRN exists → switch to update mode instead of hard block
+          const existingName = String(data.full_name ?? "");
+          setUpdateMode(true);
+          setExistingStudentName(existingName);
+          setDuplicateWarning(null); // clear old error-style warning
         } else {
+          setUpdateMode(false);
+          setExistingStudentName(null);
           setDuplicateWarning(null);
         }
       } catch (err) {
         console.warn("Unable to perform live LRN check against database:", err);
+        setUpdateMode(false);
+        setExistingStudentName(null);
+        setDuplicateWarning(null);
       } finally {
         setIsCheckingLrn(false);
       }
@@ -356,7 +489,54 @@ export const EnrollmentUploadForm: React.FC = () => {
     return () => clearTimeout(timer);
   }, [lrn]);
 
-  // ── Handle enrollment confirmation submit ───────────────────────────────
+  // ── Commit extracted grades into `grades` table ─────────────────────────
+  async function commitGrades(
+    studentLrn: string,
+    record: SF10ScholasticRecord
+  ): Promise<number> {
+    const client = supabase as unknown as DbClient;
+    const sy = record.schoolYear ?? "2025-2026";
+    const gl = record.gradeLevel ?? "Grade 7";
+
+    const rows: Record<string, unknown>[] = [];
+    for (const gradeRow of record.grades) {
+      const quarterMap: [number, number | undefined][] = [
+        [1, gradeRow.q1],
+        [2, gradeRow.q2],
+        [3, gradeRow.q3],
+        [4, gradeRow.q4],
+      ];
+      for (const [quarter, grade] of quarterMap) {
+        if (grade == null) continue;
+        rows.push({
+          student_lrn: studentLrn,
+          grade_level: gl,
+          school_year: sy,
+          subject: gradeRow.subject,
+          quarter,
+          grade,
+        });
+      }
+    }
+
+    if (rows.length === 0) return 0;
+
+    try {
+      const { error } = await client.from("grades").upsert(rows, {
+        onConflict: "student_lrn,grade_level,school_year,subject,quarter",
+      });
+      if (error) {
+        console.warn("Grade commit error (non-fatal):", error);
+        return 0;
+      }
+      return rows.length;
+    } catch (err) {
+      console.warn("Grade commit exception (non-fatal):", err);
+      return 0;
+    }
+  }
+
+  // ── Handle enrollment confirmation / update submit ──────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -365,12 +545,9 @@ export const EnrollmentUploadForm: React.FC = () => {
       return;
     }
 
-    if (duplicateWarning) {
-      return; // Blocked by duplicate warning
-    }
-
     setIsSubmitting(true);
     setErrorMessage(null);
+    setGradeCommitLog(null);
 
     try {
       const cleanLrn = lrn.trim();
@@ -401,20 +578,57 @@ export const EnrollmentUploadForm: React.FC = () => {
         console.warn("Storage upload fallback:", uploadErr);
       }
 
-      const dbClient = supabase as unknown as {
-        from: (table: string) => {
-          insert: (values: Record<string, unknown>) => {
-            select: () => {
-              single: () => Promise<{ data: { id: string } | null; error: unknown }>;
-            };
-          };
-          update: (values: Record<string, unknown>) => {
-            eq: (col: string, val: string) => Promise<{ error: unknown }>;
-          };
-        };
+      const dbClient = supabase as unknown as DbClient;
+
+      // 2. Upsert student record (insert new OR update existing by LRN)
+      let studentId = `std-${Date.now()}`;
+      const studentPayload: Record<string, unknown> = {
+        lrn: cleanLrn,
+        full_name: cleanName,
+        birthdate: birthdate || null,
+        sex: sex || null,
+        address: address || null,
+        grade_level: gradeLevel,
+        section_id: sectionId || null,
+        enrollment_status: "enrolled",
+        sf10_file_url: uploadedPublicUrl,
       };
 
-      // 2. Create pending enrollment_requests record
+      if (updateMode) {
+        // UPDATE existing student row by LRN
+        try {
+          await dbClient
+            .from("students")
+            .update(studentPayload)
+            .eq("lrn", cleanLrn);
+          // Retrieve id for downstream use
+          const { data: existing } = await dbClient
+            .from("students")
+            .select("id")
+            .eq("lrn", cleanLrn)
+            .maybeSingle();
+          if (existing?.id) studentId = String(existing.id);
+        } catch (updateErr) {
+          console.warn("DB students update fallback:", updateErr);
+        }
+      } else {
+        // INSERT new student row
+        try {
+          const { data: studentData, error: studentError } = await dbClient
+            .from("students")
+            .insert(studentPayload)
+            .select()
+            .single();
+
+          if (!studentError && studentData) {
+            studentId = String(studentData.id);
+          }
+        } catch (studentErr) {
+          console.warn("DB students insert fallback:", studentErr);
+        }
+      }
+
+      // 3. Create / update enrollment_requests record
       let requestId = `req-${Date.now()}`;
       try {
         const { data: reqData, error: reqError } = await dbClient
@@ -428,39 +642,13 @@ export const EnrollmentUploadForm: React.FC = () => {
           .single();
 
         if (!reqError && reqData) {
-          requestId = reqData.id;
+          requestId = String(reqData.id);
         }
       } catch (reqErr) {
         console.warn("DB enrollment_requests insert fallback:", reqErr);
       }
 
-      // 3. Write confirmed row into students table
-      let studentId = `std-${Date.now()}`;
-      try {
-        const { data: studentData, error: studentError } = await dbClient
-          .from("students")
-          .insert({
-            lrn: cleanLrn,
-            full_name: cleanName,
-            birthdate: birthdate || null,
-            sex: sex || null,
-            address: address || null,
-            grade_level: gradeLevel,
-            section_id: sectionId || null,
-            enrollment_status: "enrolled",
-            sf10_file_url: uploadedPublicUrl,
-          })
-          .select()
-          .single();
-
-        if (!studentError && studentData) {
-          studentId = studentData.id;
-        }
-      } catch (studentErr) {
-        console.warn("DB students insert fallback:", studentErr);
-      }
-
-      // 4. Update enrollment_requests row to 'confirmed'
+      // 4. Update enrollment request status to 'confirmed'
       try {
         await dbClient
           .from("enrollment_requests")
@@ -470,7 +658,19 @@ export const EnrollmentUploadForm: React.FC = () => {
         console.warn("DB request update status fallback:", updateErr);
       }
 
-      // 5. Render success screen
+      // 5. Commit extracted grades to `grades` table
+      let gradesCommitted = 0;
+      const recordToCommit = scholasticRecord ?? xlsxParsedData?.scholasticRecord;
+      if (recordToCommit && recordToCommit.grades.length > 0) {
+        gradesCommitted = await commitGrades(cleanLrn, recordToCommit);
+        if (gradesCommitted > 0) {
+          setGradeCommitLog(
+            `${gradesCommitted} quarterly grade entries committed to the grades table for SY ${recordToCommit.schoolYear ?? "2025-2026"}.`
+          );
+        }
+      }
+
+      // 6. Render success screen
       setSuccessData({
         lrn: cleanLrn,
         fullName: cleanName,
@@ -478,6 +678,8 @@ export const EnrollmentUploadForm: React.FC = () => {
         studentId,
         requestId,
         fileUrl: uploadedPublicUrl,
+        wasUpdate: updateMode,
+        gradesCommitted,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to confirm enrollment.";
@@ -501,9 +703,15 @@ export const EnrollmentUploadForm: React.FC = () => {
     setAddress("");
     setGradeLevel("Grade 7");
     setReviewerNotes("");
+    setElementarySchoolId("");
+    setElementaryGenAve(null);
+    setScholasticRecord(null);
     setDuplicateWarning(null);
+    setUpdateMode(false);
+    setExistingStudentName(null);
     setSuccessData(null);
     setErrorMessage(null);
+    setGradeCommitLog(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -514,24 +722,38 @@ export const EnrollmentUploadForm: React.FC = () => {
     selectedFile?.name.toLowerCase().endsWith(".xlsx") ||
     selectedFile?.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+  // Active scholastic record (state-controlled so user could theoretically edit)
+  const activeScholasticRecord = scholasticRecord ?? xlsxParsedData?.scholasticRecord;
+
   // ─────────────────────────────────────────────────────────────────────────
   // Success view
   // ─────────────────────────────────────────────────────────────────────────
   if (successData) {
     return (
       <Card
-        title="Learner Enrollment Confirmed"
-        subtitle="The student record and SF10 permanent document link have been saved to the registry."
-        action={<Badge status="approved" label="Confirmed" />}
+        title={successData.wasUpdate ? "Learner Record Updated" : "Learner Enrollment Confirmed"}
+        subtitle={
+          successData.wasUpdate
+            ? "The existing student record has been updated and grades have been committed to the registry."
+            : "The student record and SF10 permanent document link have been saved to the registry."
+        }
+        action={<Badge status="approved" label={successData.wasUpdate ? "Updated" : "Confirmed"} />}
       >
         <div className="space-y-6">
           <div className="p-4 bg-tingub-green/10 border border-tingub-green/30 rounded-[8px] text-ink text-sm">
             <p className="font-bold text-tingub-green text-base">
-              Enrollment Successfully Registered!
+              {successData.wasUpdate ? "Record Successfully Updated!" : "Enrollment Successfully Registered!"}
             </p>
             <p className="mt-1 text-xs opacity-90">
-              Student record written to <code>students</code> table and enrollment request marked as confirmed.
+              {successData.wasUpdate
+                ? `Student row for LRN ${successData.lrn} was updated in the students table.`
+                : "Student record written to students table and enrollment request marked as confirmed."}
             </p>
+            {successData.gradesCommitted > 0 && (
+              <p className="mt-1 text-xs font-medium text-tingub-green">
+                ✓ {successData.gradesCommitted} quarterly grade entries saved to the grades table.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm font-normal">
@@ -555,7 +777,7 @@ export const EnrollmentUploadForm: React.FC = () => {
 
           <div className="flex gap-3 pt-2 border-t border-ink/10">
             <Button variant="approved" onClick={resetForm}>
-              Enroll another learner
+              {successData.wasUpdate ? "Update another learner" : "Enroll another learner"}
             </Button>
             <Button variant="secondary" onClick={() => window.print()}>
               Print enrollment summary
@@ -686,8 +908,15 @@ export const EnrollmentUploadForm: React.FC = () => {
               )}
             </div>
 
-            {/* Academic History (collapsible) */}
-            {xlsxParsedData?.academicHistory && xlsxParsedData.academicHistory.length > 0 && (
+            {/* Grade 7 Scholastic Record (from coordinate extraction) */}
+            {activeScholasticRecord && activeScholasticRecord.grades.length > 0 && (
+              <div className="mt-2">
+                <ScholasticRecordCard record={activeScholasticRecord} />
+              </div>
+            )}
+
+            {/* Legacy Academic History (label-scan fallback, collapsible) */}
+            {!activeScholasticRecord && xlsxParsedData?.academicHistory && xlsxParsedData.academicHistory.length > 0 && (
               <div className="mt-2">
                 <button
                   type="button"
@@ -720,8 +949,8 @@ export const EnrollmentUploadForm: React.FC = () => {
           title="2. Learner Manual Enrollment Form"
           subtitle="ICT Coordinator data entry from SF10 record"
           action={
-            duplicateWarning ? (
-              <Badge status="warning" label="Duplicate LRN" />
+            updateMode ? (
+              <Badge status="warning" label="Update Mode" />
             ) : xlsxParsedData && xlsxParsedData.filledCount > 0 ? (
               <Badge status="approved" label="Auto-filled" />
             ) : (
@@ -731,8 +960,28 @@ export const EnrollmentUploadForm: React.FC = () => {
         >
           <form onSubmit={handleSubmit} className="space-y-4">
 
+            {/* ── UPDATE MODE BANNER ─────────────────────────────────────── */}
+            {updateMode && (
+              <div
+                className="p-4 rounded-[8px] space-y-1 border-2"
+                style={{ background: "#F5A62318", borderColor: "#F5A623" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Badge status="pending" label="Existing Record Found" />
+                  <span className="font-bold text-sm text-[#9A6600]">
+                    Update Mode Active
+                  </span>
+                </div>
+                <p className="text-xs text-ink font-normal">
+                  LRN <strong>{lrn}</strong> is already registered
+                  {existingStudentName ? ` to "${existingStudentName}"` : ""}.
+                  Submitting will <strong>update</strong> the existing student record rather than create a duplicate.
+                </p>
+              </div>
+            )}
+
             {/* ── Auto-fill info banner ──────────────────────────────────── */}
-            {xlsxParsedData && xlsxParsedData.filledCount > 0 && (
+            {xlsxParsedData && xlsxParsedData.filledCount > 0 && !updateMode && (
               <div className="p-3 bg-[#1B3B8C]/10 border border-[#1B3B8C]/30 rounded-[8px] flex items-start gap-2">
                 <svg className="w-4 h-4 text-[#1B3B8C] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -760,19 +1009,10 @@ export const EnrollmentUploadForm: React.FC = () => {
               </div>
             )}
 
-            {/* ── DUPLICATE LRN WARNING BANNER ──────────────────────────── */}
-            {duplicateWarning && (
-              <div
-                className="p-4 rounded-[8px] space-y-1 border-2"
-                style={{ background: "#E8720C26", borderColor: "#E8720C" }}
-              >
-                <div className="flex items-center gap-2">
-                  <Badge status="warning" label="LRN Already Enrolled" />
-                  <span className="font-bold text-sm" style={{ color: "#E8720C" }}>
-                    Cannot Confirm Enrollment
-                  </span>
-                </div>
-                <p className="text-xs text-ink font-normal">{duplicateWarning}</p>
+            {/* ── Grade commit log ───────────────────────────────────────── */}
+            {gradeCommitLog && (
+              <div className="p-3 bg-tingub-green/10 border border-tingub-green/30 rounded-[8px] text-xs text-tingub-green font-medium">
+                ✓ {gradeCommitLog}
               </div>
             )}
 
@@ -795,9 +1035,9 @@ export const EnrollmentUploadForm: React.FC = () => {
                 maxLength={12}
                 value={lrn}
                 onChange={(e) => setLrn(e.target.value.replace(/\D/g, ""))}
-                placeholder="12-digit DepEd LRN (e.g. 109876543210)"
+                placeholder="12-digit DepEd LRN (e.g. 120019180083)"
                 className={`w-full px-3 py-2 bg-paper border rounded-[8px] text-ink font-normal focus:outline-none focus:ring-2 focus:ring-tingub-blue placeholder:text-ink/40 ${
-                  duplicateWarning ? "border-[#E8720C] border-2" : "border-ink/30"
+                  updateMode ? "border-[#F5A623] border-2" : duplicateWarning ? "border-[#E8720C] border-2" : "border-ink/30"
                 }`}
               />
               <p className="text-[11px] text-ink/60 mt-1 font-normal">
@@ -919,17 +1159,54 @@ export const EnrollmentUploadForm: React.FC = () => {
             )}
 
             {/* ── Elementary School (auto-filled from xlsx) ─────────────── */}
-            {xlsxParsedData?.elementarySchool && (
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">
+            {(xlsxParsedData?.elementarySchool || xlsxParsedData?.elementarySchoolId || xlsxParsedData?.elementaryGenAve != null) && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-ink">
                   Elementary School (from SF10)
                 </label>
-                <input
-                  type="text"
-                  readOnly
-                  value={xlsxParsedData.elementarySchool}
-                  className="w-full px-3 py-2 bg-ink/5 border border-ink/20 rounded-[8px] text-ink/70 font-normal text-sm"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {xlsxParsedData?.elementarySchool && (
+                    <div className="sm:col-span-2 p-2 bg-ink/5 border border-ink/20 rounded-[8px]">
+                      <span className="text-[10px] text-ink/50 block">School Name</span>
+                      <span className="text-sm text-ink/80 font-normal">{xlsxParsedData.elementarySchool}</span>
+                    </div>
+                  )}
+                  {(xlsxParsedData?.elementarySchoolId || elementarySchoolId) && (
+                    <div className="p-2 bg-ink/5 border border-ink/20 rounded-[8px]">
+                      <span className="text-[10px] text-ink/50 block">School ID</span>
+                      <span className="text-sm text-ink/80 font-normal font-mono">
+                        {xlsxParsedData?.elementarySchoolId || elementarySchoolId}
+                      </span>
+                    </div>
+                  )}
+                  {(xlsxParsedData?.elementaryGenAve != null || elementaryGenAve != null) && (
+                    <div className="p-2 bg-ink/5 border border-ink/20 rounded-[8px]">
+                      <span className="text-[10px] text-ink/50 block">Gen. Average</span>
+                      <span className={`text-sm font-bold ${
+                        (xlsxParsedData?.elementaryGenAve ?? elementaryGenAve ?? 0) >= 75
+                          ? "text-[#1E6B3A]"
+                          : "text-[#E8720C]"
+                      }`}>
+                        {(xlsxParsedData?.elementaryGenAve ?? elementaryGenAve ?? "—")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Grade 7 Grades commit notice ──────────────────────────── */}
+            {activeScholasticRecord && activeScholasticRecord.grades.length > 0 && (
+              <div className="p-3 bg-[#1E6B3A]/10 border border-[#1E6B3A]/30 rounded-[8px] flex items-start gap-2">
+                <svg className="w-4 h-4 text-[#1E6B3A] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-[12px] text-[#1E6B3A] font-medium">
+                  <span className="font-bold">{activeScholasticRecord.grades.length} Grade 7 subjects</span>{" "}
+                  parsed from the SF10 spreadsheet
+                  {activeScholasticRecord.schoolYear ? ` (SY ${activeScholasticRecord.schoolYear})` : ""}.
+                  Grades will be committed to the <code className="font-mono text-[11px]">grades</code> table on submit.
+                </p>
               </div>
             )}
 
@@ -957,9 +1234,11 @@ export const EnrollmentUploadForm: React.FC = () => {
               <Button
                 type="submit"
                 variant="approved"
-                disabled={Boolean(duplicateWarning) || !selectedFile || isSubmitting || isParsingXlsx}
+                disabled={!selectedFile || isSubmitting || isParsingXlsx}
               >
-                {isSubmitting ? "Uploading SF10…" : "Confirm enrollment"}
+                {isSubmitting
+                  ? updateMode ? "Updating record…" : "Uploading SF10…"
+                  : updateMode ? "Update existing record" : "Confirm enrollment"}
               </Button>
             </div>
           </form>
