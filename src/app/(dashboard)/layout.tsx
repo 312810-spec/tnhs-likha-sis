@@ -37,6 +37,8 @@ const ROLE_NAV_ITEMS = {
   ],
   ict_coordinator: [
     { key: "dashboard", label: "Dashboard", href: "/ict" },
+    { key: "learners", label: "Learner Registry", href: "/ict/learners" },
+    { key: "bulk-import", label: "Bulk Learner Import", href: "/ict/bulk-import" },
     { key: "enrollment", label: "Enrollment", href: "/ict/enrollment" },
     { key: "accounts", label: "Account Management", href: "/ict/accounts" },
     { key: "grade-center", label: "Grade Center", href: "/ict/grade-center" },

@@ -22,6 +22,8 @@ const VIEW_TITLES: Record<string, string> = {
   "/master-teacher/anecdotal": "ANECDOTAL RECORDS",
   "/master-teacher/review": "REVIEW & APPROVAL",
   "/ict": "ICT COORDINATOR DASHBOARD",
+  "/ict/learners": "LEARNER REGISTRY",
+  "/ict/bulk-import": "BULK LEARNER IMPORT",
   "/ict/enrollment": "ENROLLMENT",
   "/ict/accounts": "ACCOUNT MANAGEMENT",
   "/ict/grade-center": "GRADE CENTER",

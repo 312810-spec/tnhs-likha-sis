@@ -11,6 +11,18 @@ export default function IctDashboard() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <Link href="/ict/learners">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Learner Registry</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Browse learners & filter missing SF10</p>
+          </div>
+        </Link>
+        <Link href="/ict/bulk-import">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Bulk Learner Import</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Onboard learners from a CSV in one pass</p>
+          </div>
+        </Link>
         <Link href="/ict/enrollment">
           <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
             <h3 className="text-sm font-bold text-ink">Enrollment</h3>
