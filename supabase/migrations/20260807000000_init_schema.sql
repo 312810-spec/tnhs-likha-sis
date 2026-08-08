@@ -148,6 +148,43 @@ CREATE TABLE class_record_grades (
   CONSTRAINT unique_student_subject_quarter UNIQUE (student_id, subject_id, quarter)
 );
 
+-- Master Teacher grade update constraint: status and review_notes only
+CREATE OR REPLACE FUNCTION enforce_master_teacher_class_record_updates()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF get_auth_user_role() = 'master_teacher' THEN
+    IF (
+      NEW.student_id IS DISTINCT FROM OLD.student_id OR
+      NEW.subject_id IS DISTINCT FROM OLD.subject_id OR
+      NEW.quarter IS DISTINCT FROM OLD.quarter OR
+      NEW.written_work_raw IS DISTINCT FROM OLD.written_work_raw OR
+      NEW.written_work_highest IS DISTINCT FROM OLD.written_work_highest OR
+      NEW.performance_task_raw IS DISTINCT FROM OLD.performance_task_raw OR
+      NEW.performance_task_highest IS DISTINCT FROM OLD.performance_task_highest OR
+      NEW.st1_raw IS DISTINCT FROM OLD.st1_raw OR
+      NEW.st1_highest IS DISTINCT FROM OLD.st1_highest OR
+      NEW.st2_raw IS DISTINCT FROM OLD.st2_raw OR
+      NEW.st2_highest IS DISTINCT FROM OLD.st2_highest OR
+      NEW.te_raw IS DISTINCT FROM OLD.te_raw OR
+      NEW.te_highest IS DISTINCT FROM OLD.te_highest OR
+      NEW.initial_grade IS DISTINCT FROM OLD.initial_grade OR
+      NEW.transmuted_grade IS DISTINCT FROM OLD.transmuted_grade OR
+      NEW.created_at IS DISTINCT FROM OLD.created_at
+    ) THEN
+      RAISE EXCEPTION 'Master teachers may only update status and review_notes on class_record_grades';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER enforce_master_teacher_class_record_updates_trigger
+BEFORE UPDATE ON class_record_grades
+FOR EACH ROW
+EXECUTE FUNCTION enforce_master_teacher_class_record_updates();
+
 -- Formative Logs Table (Isolated non-graded ESRU entries)
 CREATE TABLE formative_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -321,6 +358,10 @@ CREATE POLICY "Principal and ICT Coordinator can view all students"
   ON students FOR SELECT
   USING (get_auth_user_role() IN ('principal', 'ict_coordinator'));
 
+CREATE POLICY "Master Teachers can view all students"
+  ON students FOR SELECT
+  USING (get_auth_user_role() = 'master_teacher');
+
 CREATE POLICY "ICT Coordinator can manage students"
   ON students FOR ALL
   USING (get_auth_user_role() = 'ict_coordinator')
@@ -329,7 +370,7 @@ CREATE POLICY "ICT Coordinator can manage students"
 CREATE POLICY "Teachers can view students in their assigned section"
   ON students FOR SELECT
   USING (
-    get_auth_user_role() IN ('teacher', 'master_teacher') 
+    get_auth_user_role() = 'teacher'
     AND section_id = get_auth_user_section_id()
   );
 
