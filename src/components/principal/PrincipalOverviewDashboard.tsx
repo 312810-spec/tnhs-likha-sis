@@ -6,6 +6,8 @@ import { db, LocalSection } from "@/lib/db";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/Table";
+import { BarChart } from "@/components/charts/BarChart";
 
 /**
  * Principal Overview Dashboard (READ ONLY).
@@ -126,26 +128,36 @@ export function PrincipalOverviewDashboard() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[480px] text-sm">
-              <thead>
-                <tr className="border-b border-ink/15 text-left">
-                  <th className="p-3 font-bold text-ink">Grade Level</th>
-                  <th className="p-3 font-bold text-ink">Section</th>
-                  <th className="p-3 text-right font-bold text-ink">Enrolled</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink/10">
+            <Table className="w-full min-w-[480px] text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-ink/15 text-left">
+                  <TableCell isHeader className="p-3 font-bold text-ink">
+                    Grade Level
+                  </TableCell>
+                  <TableCell isHeader className="p-3 font-bold text-ink">
+                    Section
+                  </TableCell>
+                  <TableCell isHeader className="p-3 text-right font-bold text-ink">
+                    Enrolled
+                  </TableCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-ink/10">
                 {sectionRollups.map((rollup) => (
-                  <tr key={rollup.section.id} className="hover:bg-ink/5">
-                    <td className="p-3 font-medium text-ink">{rollup.section.grade_level}</td>
-                    <td className="p-3 text-ink">{rollup.section.section_name}</td>
-                    <td className="p-3 text-right font-mono font-bold text-tingub-blue">
+                  <TableRow key={rollup.section.id} className="hover:bg-ink/5">
+                    <TableCell className="p-3 font-medium text-ink">
+                      {rollup.section.grade_level}
+                    </TableCell>
+                    <TableCell className="p-3 text-ink">
+                      {rollup.section.section_name}
+                    </TableCell>
+                    <TableCell className="p-3 text-right font-mono font-bold text-tingub-blue">
                       {rollup.enrolled}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </Card>
@@ -162,28 +174,33 @@ export function PrincipalOverviewDashboard() {
             description="No class records carry an official Transmuted Grade. Subject teachers must submit and master teachers approve quarterly records before the distribution chart populates."
           />
         ) : (
-          <div className="space-y-3">
-            {distribution.map((bucket) => (
-              <div key={bucket.label}>
-                <div className="flex items-center justify-between text-xs font-medium text-ink mb-1">
-                  <span>{bucket.label}</span>
-                  <span className="font-mono">
-                    {bucket.count} · {bucket.percent}%
-                  </span>
+          <div className="space-y-4">
+            <BarChart
+              categories={distribution.map((d) => d.label)}
+              series={[
+                {
+                  name: "Count",
+                  data: distribution.map((d) => d.count),
+                },
+              ]}
+              height={280}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {distribution.map((bucket) => (
+                <div key={bucket.label} className="rounded-[12px] border border-ink/10 bg-paper p-3">
+                  <div className="flex items-center justify-between text-sm font-medium text-ink mb-2">
+                    <span>{bucket.label}</span>
+                    <span className="font-mono text-tingub-blue">{bucket.percent}%</span>
+                  </div>
+                  <div className="h-3 w-full rounded-full bg-ink/5">
+                    <div
+                      className={`${bucket.barClass} h-full rounded-full transition-all`}
+                      style={{ width: `${bucket.percent}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-4 w-full rounded-[8px] bg-ink/5 border border-ink/10">
-                  <div
-                    className={`h-full rounded-[8px] ${bucket.barClass} transition-all`}
-                    style={{ width: `${(bucket.count / maxDistribution) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            <p className="text-xs text-ink/60 font-normal pt-1">
-              Bar widths are relative to the largest bucket. Percentages are of all recorded
-              Transmuted Grades. (Total recorded grades:{" "}
-              {distribution.reduce((sum, d) => sum + d.count, 0)})
-            </p>
+              ))}
+            </div>
           </div>
         )}
       </Card>

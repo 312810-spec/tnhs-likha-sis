@@ -44,7 +44,7 @@ export function Sidebar({
       <div className="p-4 border-b border-paper/10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[8px] bg-tingub-gold flex items-center justify-center flex-shrink-0">
-            <span className="text-[#12265C] font-bold text-sm">TNHS</span>
+            <span className="text-tingub-blue font-bold text-sm">TNHS</span>
           </div>
           {!isCollapsed && (
             <div className="min-w-0">
@@ -52,7 +52,7 @@ export function Sidebar({
                 TNHS LIKHA-SIS
               </h1>
               <p className="text-[10px] text-paper/70 font-normal truncate">
-                TINGUB NHS
+                TINGUB NATIONAL HIGH SCHOOL
               </p>
             </div>
           )}
