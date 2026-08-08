@@ -15,7 +15,10 @@ Rules:
 - Every table holding student data needs a Row Level Security policy
   before a feature counts as done.
 - Every screen lives inside the authenticated role layout at a real
-  route. Never add a standalone demo, index, or preview page.
+  route. Never add a standalone demo, index, or preview page. The
+  shared layout renders sign-out and the Prompt 1 styling once. A
+  page rebuilding either on its own means the layout is not actually
+  being used.
 - Use Supabase Edge Functions for privileged server-side logic, never
   a Next.js API route or Server Action. The app has to run as a
   static export for the Windows and Android builds, and those do not
@@ -24,12 +27,10 @@ Rules:
   redirect. Packaged desktop and mobile builds have no real https
   domain for a redirect to land on.
 - Writing schema SQL to a file is not the same as applying it. After
-  any create table or alter table work, apply the SQL directly to the
-  live Supabase project before considering the task done; do not stop
-  at writing the migration file. If the SQL cannot be run directly,
-  state plainly that the SQL Editor needs to run it by hand, and
-  confirm the table shows in Table Editor before calling the prompt
-  done.
+  any create table or alter table work, run it against the live
+  Supabase project, or state plainly that the SQL Editor needs to run
+  it by hand, and confirm the table shows in Table Editor before
+  calling the prompt done.
 
 Design tokens (set these up in Prompt 1, then reuse everywhere):
 - Colors: tingub-blue #1B3B8C, tingub-green #1E6B3A, tingub-gold

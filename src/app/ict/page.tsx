@@ -1,70 +1,54 @@
 import Link from "next/link";
+import { Card } from "@/components/ui/Card";
+
+const quickLinks = [
+  { title: "Learner Registry", description: "Browse learners and flag missing SF10 records.", href: "/ict/learners", badge: "Registry" },
+  { title: "Bulk Learner Import", description: "Onboard learners from a CSV in one pass.", href: "/ict/bulk-import", badge: "Import" },
+  { title: "Enrollment", description: "Manage SF10 uploads and learner verification.", href: "/ict/enrollment", badge: "Enrollment" },
+  { title: "Account Management", description: "Provision teacher and staff accounts.", href: "/ict/accounts", badge: "Accounts" },
+  { title: "Grade Center", description: "Oversee grade encoding and data quality.", href: "/ict/grade-center", badge: "Grades" },
+  { title: "Composite Grades", description: "Inspect the full grade registry at a glance.", href: "/ict/composite-grades", badge: "Reports" },
+  { title: "Reports & Analytics", description: "Generate DepEd forms and summary reports.", href: "/ict/reports", badge: "Reports" },
+  { title: "Forms & IDs", description: "Coordinate official school forms and student IDs.", href: "/ict/forms", badge: "Forms" },
+  { title: "Student ID Generator", description: "Generate ID cards with QR support.", href: "/ict/id-generator", badge: "IDs" },
+];
 
 export default function IctDashboard() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink">ICT Coordinator Dashboard</h1>
-        <p className="text-sm text-ink/60 font-normal">
-          System administration, enrollment, and account management
-        </p>
+      <div className="rounded-[8px] border border-ink/15 bg-paper p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-tingub-blue">ICT coordinator</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink">Coordinator Dashboard</h1>
+            <p className="mt-2 text-sm text-ink/70 font-normal">
+              Administer accounts, enrollment tasks, and learner data with the same shared navigation shell used across the system.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/ict/accounts" className="inline-flex items-center justify-center rounded-[8px] border border-tingub-blue/20 bg-tingub-blue px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-tingub-blue/90">
+              Manage accounts
+            </Link>
+            <Link href="/ict/enrollment" className="inline-flex items-center justify-center rounded-[8px] border border-ink/20 bg-paper px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink/5">
+              Review enrollment
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <Link href="/ict/learners">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Learner Registry</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Browse learners & filter missing SF10</p>
-          </div>
-        </Link>
-        <Link href="/ict/bulk-import">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Bulk Learner Import</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Onboard learners from a CSV in one pass</p>
-          </div>
-        </Link>
-        <Link href="/ict/enrollment">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Enrollment</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">SF10 upload & learner verification</p>
-          </div>
-        </Link>
-        <Link href="/ict/accounts">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Account Management</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Provision teacher accounts</p>
-          </div>
-        </Link>
-        <Link href="/ict/grade-center">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Grade Center</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Oversee grade encoding</p>
-          </div>
-        </Link>
-        <Link href="/ict/composite-grades">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Composite Grades</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Full grade registry</p>
-          </div>
-        </Link>
-        <Link href="/ict/reports">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Reports & Analytics</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Generate DepEd forms</p>
-          </div>
-        </Link>
-        <Link href="/ict/forms">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Forms & IDs</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Official school forms</p>
-          </div>
-        </Link>
-        <Link href="/ict/id-generator">
-          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
-            <h3 className="text-sm font-bold text-ink">Student ID Generator</h3>
-            <p className="text-xs text-ink/60 font-normal mt-1">Generate ID cards with QR</p>
-          </div>
-        </Link>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {quickLinks.map((item) => (
+          <Card key={item.href} title={item.title} subtitle={item.description} className="h-full">
+            <div className="flex items-center justify-between gap-3">
+              <span className="rounded-full border border-tingub-blue/20 bg-tingub-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-tingub-blue">
+                {item.badge}
+              </span>
+              <Link href={item.href} className="inline-flex items-center justify-center rounded-[8px] border border-ink/20 bg-paper px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink/5">
+                Open
+              </Link>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );
