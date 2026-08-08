@@ -14,6 +14,22 @@ Rules:
   school_settings.grading_mode is adjusted_transmutation.
 - Every table holding student data needs a Row Level Security policy
   before a feature counts as done.
+- Every screen lives inside the authenticated role layout at a real
+  route. Never add a standalone demo, index, or preview page.
+- Use Supabase Edge Functions for privileged server-side logic, never
+  a Next.js API route or Server Action. The app has to run as a
+  static export for the Windows and Android builds, and those do not
+  run Next.js server code.
+- Login stays plain email and password. No magic link, no OAuth
+  redirect. Packaged desktop and mobile builds have no real https
+  domain for a redirect to land on.
+- Writing schema SQL to a file is not the same as applying it. After
+  any create table or alter table work, apply the SQL directly to the
+  live Supabase project before considering the task done; do not stop
+  at writing the migration file. If the SQL cannot be run directly,
+  state plainly that the SQL Editor needs to run it by hand, and
+  confirm the table shows in Table Editor before calling the prompt
+  done.
 
 Design tokens (set these up in Prompt 1, then reuse everywhere):
 - Colors: tingub-blue #1B3B8C, tingub-green #1E6B3A, tingub-gold
@@ -29,18 +45,3 @@ Design tokens (set these up in Prompt 1, then reuse everywhere):
 
 Roles: teacher, master_teacher, ict_coordinator, principal, stakeholder.
 Full definitions are in PLAN.md.
-
-# Visual Layout & Component Rules (TNHS LIKHA-SIS)
-
-Theme & Colors:
-- Primary Sidebar: tingub-blue `#1B3B8C` (Dark variant `#12265C` for background). Active item pill: tingub-gold `#F5A623` with ink `#1A1A1A` text, or white text with flat highlight.
-- Header Bar: tingub-green `#1E6B3A`. Status pill: "TINGUB NATIONAL HIGH SCHOOL" on paper `#FAFAF8`.
-- Content Area Background: paper `#FAFAF8`. Cards & Tables: Flat `#FFFFFF` with 8px corner radius and 1px border (`#E5E7EB`). No drop shadows or gradients.
-- Badges & Accents: Success/Passed = tingub-green `#1E6B3A`, Pending/Alert = tingub-gold `#F5A623`, Warnings/SARDO = tingub-orange `#E8720C`.
-- Typography: Inter font. Weight 700 headings, 500 buttons/labels, 400 body text.
-
-Layout Shell Structure:
-- Left Sidebar Navigation (14 Items): Dashboard, Learner Registry, ID Generator, Attendance Center, Learning Resources, Grade Center, Health & Nutrition, Remarks & Comments, Requirements Tracker, Forms Automation, Reports & Analytics, School Calendar, Backup & Restore, School Settings.
-- Top Header: Hamburger menu button, view breadcrumb title, school identifier pill, live clock (Date & Time format: "TUESDAY, JUNE 9, 2026 | 10:06:54 PM"), and theme toggle icon.
-
-- SF10 Upload Processing: Accept `.xlsx` spreadsheet files in addition to standard documents. Parse `.xlsx` files using the `xlsx` (SheetJS) package to automatically extract LRN, student demographics, and past scholastic grades directly into the enrollment form.

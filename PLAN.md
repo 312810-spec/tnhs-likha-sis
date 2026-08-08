@@ -1,170 +1,101 @@
-================================================================================
-          TINGUB NATIONAL HIGH SCHOOL INFORMATION SYSTEM (SIS)
-              DO 015, s. 2026 ARCHITECTURE & DEVELOPMENT PLAN
-================================================================================
+# PLAN.md: TNHS LIKHA-SIS
 
-1. EXECUTIVE SUMMARY & POLICY COMPLIANCE
---------------------------------------------------------------------------------
-- Target Institution: Tingub National High School (JHS & SHS).
-- System Purpose: Multi-platform, offline-first School Information System (SIS) 
-  for managing student data, class records, report cards, approval pipelines, 
-  and official DepEd school forms.
-- Governing Policy: DepEd Order No. 015, s. 2026 (Revised Guidelines on 
-  Classroom Assessment, Grading System, and Awards and Recognition for the 
-  K to 12 Basic Education Program).
-- Core Policy Requirements Implemented:
-  * Zero-Based / Raw Percentage Computation: Eliminates legacy DO 8, s. 2015 
-    arbitrary transmutation tables. Apply transmutation table lookup ONLY when
-    school_settings.grading_mode is adjusted_transmutation.
-  * Component Weightings (DO 015, s. 2026):
-    - JHS & SHS Core / Academic Electives: 
-      20% Written Works (WW), 50% Performance Tasks (PT), 30% Examinations (EX)
-    - SHS Field Exposure / Creative Production: 
-      15% Written Works (WW), 70% Performance Tasks (PT), 15% Examinations (EX)
-    - SHS Research Electives, Design & Innovation: 
-      40% Written Works (WW), 60% Performance Tasks (PT), 0% Examinations
-    - SHS Work Immersion: 
-      20% Written Works (WW), 80% Performance Tasks (PT)
-  * Formative Data Isolation: Non-graded formative entries (ESRU model) 
-    tracked in formative_logs without altering quarterly GPA.
-- Infrastructure Strategy: 100% Free-Tier Architecture (Vercel + Supabase 
-  PostgreSQL/Auth + Dexie.js for local IndexedDB offline storage).
+## What this is
+TNHS LIKHA-SIS is the school information system for Tingub National
+High School (JHS and SHS). It manages enrollment, class records,
+grading under DepEd Order No. 015, s. 2026, an approval pipeline,
+DepEd school forms, and anecdotal records, across six roles.
 
-2. ROLES & PERMISSIONS
---------------------------------------------------------------------------------
-- teacher: Enters raw scores, submits quarterly class records.
-- master_teacher: Reviews class records, verifies DO 015 compliance, approves/rejects records.
-- ict_coordinator: System admin, manages users, final record locking, triggers official form compilations.
-- principal: Executive oversight, views dashboards, signs off on school forms & official records.
-- stakeholder: Parent/Student view-only access for progress cards (SF9) and notifications.
+## Grading rule, DO 015, s. 2026
+Effective SY 2026-2027. Repeals DO 8, s. 2015 and DO 36, s. 2016.
 
-3. TECHNICAL STACK & OFFLINE ARCHITECTURE
---------------------------------------------------------------------------------
-               +----------------------------------------------+
-               |      Tingub NHS Web/PWA Client (Vercel)      |
-               +----------------------+-----------------------+
-                                      |
-            +-------------------------+-------------------------+
-            |                                                   |
-            v                                                   v
-+-------------------------------+               +-------------------------------+
-|   Online Mode (Supabase API)  |               |  Offline Mode (Dexie.js DB)   |
-|  - Row-Level Security (RLS)   |               |  - IndexedDB Local Storage    |
-|  - Auth & Role Management     |               |  - Immediate Local Read/Write |
-+---------------+---------------+               +---------------+---------------+
-                |                                               |
-                +-------------------------+---------------------+
-                                          |
-                                          | (Background Sync Protocol)
-                                          v
-                           +------------------------------+
-                           |   Approval Pipeline & Forms  |
-                           |  - Teacher -> MT -> Admin    |
-                           |  - SF1, SF5, SF9, SF10 Export|
-                           +------------------------------+
+Step 1, Initial Grade:
+Written Works % = WW raw total / WW highest possible * 100
+Performance Tasks % = PT raw total / PT highest possible * 100
+Examinations % = (ST1 % * 0.30) + (ST2 % * 0.30) + (TE % * 0.40)
+Initial Grade = (WW % * WW weight) + (PT % * PT weight) + (EX % * EX weight)
 
-4. APPROVAL PIPELINE WORKFLOW
---------------------------------------------------------------------------------
-1. Subject Teacher / Class Adviser:
-   - Enters raw scores for Written Works, Performance Tasks, and Examinations 
-     into the offline-capable E-Class Record UI.
-   - Generates quarterly summaries and initial Formative/Summative diagnostic 
-     logs.
-2. Master Teacher / Department Head:
-   - Reviews grade entries via the MT Verification Dashboard.
-   - Inspects flags for out-of-bound scores, missing entries, or weighting 
-     errors under DO 015, s. 2026.
-   - Action: Approve (locks records and forwards to Admin) or Reject 
-     (returns with review notes to Teacher).
-3. ICT Coordinator / School Head:
-   - Executes administrative final lock.
-   - Triggers automated compilation for official DepEd School Forms 
-     (SF1, SF2, SF5, SF9 / Learner Progress Report Card, SF10 / Permanent 
-     Record) and Student ID rendering.
+Step 2, Transmuted Grade, SY 2026-2027 only:
+Look up the Initial Grade in the Adjusted Transmutation Table below.
+The Transmuted Grade is the official grade on report cards and forms.
+Full zero-based grading, where the Transmuted Grade equals the
+Initial Grade with no lookup, starts SY 2027-2028. Keep
+school_settings.grading_mode switchable between adjusted_transmutation
+and zero_based so this does not require a rebuild later.
 
-5. SCOPED DEVELOPMENT PROMPTS (STEP-BY-STEP EXECUTION)
---------------------------------------------------------------------------------
+## Weighted components by classification
+JHS, Grades 7-10:
+- jhs_core (English, Filipino, Math, Science, AP, GMRC/VE): 20 / 50 / 30
+- jhs_tle_mapeh (EPP/TLE, MAPEH): 20 / 60 / 20
 
-[ PROMPT 1: Supabase Database Schema & DO 015, s. 2026 Config ]
+SHS, Grades 11-12:
+- shs_core (Core Subjects, Academic Electives): 20 / 50 / 30
+- shs_field_exposure (Field Exposure, Arts Apprenticeship, Creative
+  Production and Innovation): 15 / 70 / 15
+- shs_arts_sports_wellness (Arts, Sports, Health and Wellness
+  Electives): 20 / 60 / 20
+- shs_research_design (Research Electives, Design and Innovation): 40 / 60 / 0
+- shs_techpro (TechPro Electives): 15 / 65 / 20
+- shs_work_immersion (Work Immersion): 20 / 80 / 0
 
-Apply the updated DepEd Order No. 015, s. 2026 grading rules to the Supabase 
-database schema for Tingub NHS SIS:
+Order is Written Works / Performance Tasks / Examinations.
 
-1) Update or create the `subject_weights` configuration table to store 
-   component weights per subject classification:
-   - JHS & SHS Core / Academic: 
-     written_work_weight = 0.20, performance_task_weight = 0.50, 
-     examination_weight = 0.30.
-   - SHS Field Exposure / Creative: 
-     written_work_weight = 0.15, performance_task_weight = 0.70, 
-     examination_weight = 0.15.
-   - SHS Research Electives & Design: 
-     written_work_weight = 0.40, performance_task_weight = 0.60, 
-     examination_weight = 0.00.
-   - SHS Work Immersion: 
-     written_work_weight = 0.20, performance_task_weight = 0.80, 
-     examination_weight = 0.00.
-2) Create the `class_record_grades` schema supporting raw scores, learner 
-   total raw scores, highest possible scores, and component percentage scores.
-3) Ensure non-graded formative assessments are isolated in a separate 
-   `formative_logs` table and excluded from final quarterly grade computations.
-4) Every table holding student data must have Row Level Security (RLS) enabled.
+## Adjusted Transmutation Table, SY 2026-2027 only
+Format is Initial Grade range: Transmuted Grade.
+0.00-4.67:60, 4.68-9.34:61, 9.35-14.00:62, 14.01-18.67:63,
+18.68-23.34:64, 23.35-28.00:65, 28.01-32.67:66, 32.68-37.33:67,
+37.34-42.00:68, 42.01-46.66:69, 46.67-51.33:70, 51.34-56.00:71,
+56.01-60.66:72, 60.67-65.33:73, 65.34-69.99:74, 70.00-71.17:75,
+71.18-72.35:76, 72.36-73.53:77, 73.54-74.71:78, 74.72-75.89:79,
+75.90-77.07:80, 77.08-78.25:81, 78.26-79.43:82, 79.44-80.61:83,
+80.62-81.79:84, 81.80-82.97:85, 82.98-84.15:86, 84.16-85.33:87,
+85.34-86.51:88, 86.52-87.69:89, 87.70-88.87:90, 88.88-90.05:91,
+90.06-91.23:92, 91.24-92.41:93, 92.42-93.59:94, 93.60-94.77:95,
+94.78-95.95:96, 95.96-97.13:97, 97.14-98.31:98, 98.32-99.49:99,
+99.50-100.00:100
 
-[ PROMPT 2: Offline E-Class Record & Calculation Engine (Dexie.js) ]
+Academic Excellence Awards (Grades 4-12): General Average 90 or
+higher, no Final Grade below 80 in any learning area, no derogatory
+or disciplinary record.
 
-Update the front-end calculation engine and Dexie.js offline store for Tingub NHS SIS:
+## Design
+Theme comes from the school seal: laurel wreath, blue gear, gold and
+orange sunburst, open book and torch, black text on white. Flat and
+simple. Full tokens are in AGENTS.md. Signature touch: a light
+sunburst pattern on the login screen only, everywhere else stays plain.
 
-1) Implement the DO 015, s. 2026 raw percentage calculation logic:
-   - Raw Score % = (Learner Total Raw Score / Highest Possible Score) * 100
-   - Weighted Score = Raw Score % * Component Weight
-   - Final Quarterly Grade = Sum of Weighted Scores (WW + PT + EX).
-2) Apply transmutation_table lookup ONLY when school_settings.grading_mode is adjusted_transmutation.
-3) Store all local changes in Dexie.js IndexedDB first, with a sync queue 
-   manager that auto-pushes queued updates to Supabase whenever an active 
-   internet connection is detected.
+## Roles
+| Role | What they do | Data access |
+|---|---|---|
+| teacher | Enters WW/PT/EX scores for their own subject and section | Own subject and section only |
+| adviser | A teacher flag. Also writes anecdotal records and preps SF1/SF2 for their section | Own section |
+| master_teacher | Reviews and approves or rejects submitted grades | Pending submissions in their department |
+| ict_coordinator | Creates accounts, manages SF10 uploads and enrollment | Profiles and students, for account and enrollment tasks |
+| principal | Views school-wide dashboards, signs off on forms | Read access to everything, write access to sign-off only |
+| stakeholder | Views their own linked learner's record | Only students linked to them |
 
-[ PROMPT 3: Master Teacher Review & Approval Pipeline UI ]
+Note: the original tier list named four groups. This plan keeps
+master_teacher from the source architecture doc, since the approval
+pipeline depends on it, and treats adviser as a flag on a teacher
+account rather than a separate login.
 
-Implement the approval pipeline and verification UI for Tingub NHS SIS:
+## Data flow
+An SF10 upload creates a student record. A teacher enters WW/PT/EX
+scores offline through Dexie.js, which syncs to Supabase once online.
+The engine computes the Initial Grade, then the Transmuted Grade. A
+master_teacher reviews and approves or rejects each submission.
+Approved records feed the DepEd forms exporter and the principal's
+overview dashboard.
 
-1) Build the Master Teacher (MT) verification dashboard displaying pending 
-   quarterly class records submitted by subject teachers.
-2) Include validation checks that highlight missing summative assessment 
-   scores, invalid component weightings, or missing performance tasks before 
-   sign-off.
-3) Add Approve and Reject controls with a text feedback box for rejection 
-   notes. Rejection unlocks the record for teacher edit; approval advances 
-   the status to "MT_APPROVED" and locks record fields.
-
-[ PROMPT 4: DepEd School Form Exporters & Student ID Engine ]
-
-Create the school forms exporter and printable engine for Tingub NHS SIS:
-
-1) Implement printable export generators for DepEd School Forms:
-   - SF1 (School Register)
-   - SF5 (Report on Promotion and Level of Proficiency)
-   - SF9 (Learner Progress Report Card following DO 015, s. 2026 raw score 
-     grading scale)
-   - SF10 (Learner's Permanent Academic Record)
-2) Integrate student anecdotal records logging into the student profile 
-   module.
-3) Implement an automated student ID card generator layout with QR code 
-   rendering linking to student validation tokens in Supabase.
-
-6. IMPLEMENTATION ROADMAP & MILESTONES
---------------------------------------------------------------------------------
-+---------+--------------------+-----------------------------------+-----------+
-| Phase   | Core Objective     | Key Deliverable                   | Target    |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 1 | Database & Rules   | Configure Supabase schemas with   | Weeks 1-2 |
-|         |                    | DO 015, s. 2026 weights and RLS   |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 2 | Offline Grader     | Build Dexie.js offline store and  | Weeks 3-4 |
-|         |                    | raw score calculation engine      |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 3 | Approval Engine    | Deploy MT review dashboard,       | Weeks 5-6 |
-|         |                    | validation flags, and lock states |           |
-+---------+--------------------+-----------------------------------+-----------+
-| Phase 4 | Forms & IDs        | Build print layouts for SF1, SF5, | Weeks 7-8 |
-|         |                    | SF9, SF10, and Student IDs        |           |
-+---------+--------------------+-----------------------------------+-----------+
+## Roadmap
+| Phase | Builds |
+|---|---|
+| 1 | Theme and design tokens |
+| 2 | Core schema, roles, Row Level Security |
+| 3 | SF10 upload and enrollment |
+| 4 | Offline grading engine with transmutation |
+| 5 | Master teacher approval pipeline |
+| 6 | Anecdotal records repository |
+| 7 | DepEd forms exporter and student ID |
+| 8 | Principal, ICT coordinator, and stakeholder dashboards |
+| 9 | Deploy and final QA |
