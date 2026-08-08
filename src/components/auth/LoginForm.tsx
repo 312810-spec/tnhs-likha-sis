@@ -1,16 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { SunburstBackground } from "@/components/ui/SunburstBackground";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { UserRole } from "@/types/database.types";
+
+const ROLE_ROUTES: Record<UserRole, string> = {
+  teacher: "/teacher",
+  master_teacher: "/master-teacher",
+  ict_coordinator: "/ict",
+  principal: "/principal",
+  stakeholder: "/stakeholder",
+};
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("teacher");
+  const [role, setRole] = useState<UserRole>("teacher");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { user, role: authRole, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user && authRole) {
+      const target = ROLE_ROUTES[authRole] || "/teacher";
+      router.push(target);
+    }
+  }, [user, authRole, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +54,21 @@ export const LoginForm: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="relative min-h-[550px] w-full flex items-center justify-center p-4 bg-paper rounded-[8px] border border-ink/10 overflow-hidden">
+        <SunburstBackground />
+        <div className="relative z-10 text-sm text-ink/70 font-normal">
+          Loading session...
+        </div>
+      </div>
+    );
+  }
+
+  if (user && authRole) {
+    return null;
+  }
 
   return (
     <div className="relative min-h-[550px] w-full flex items-center justify-center p-4 bg-paper rounded-[8px] border border-ink/10 overflow-hidden">
@@ -61,7 +97,7 @@ export const LoginForm: React.FC = () => {
             <select
               id="role"
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => setRole(e.target.value as UserRole)}
               className="w-full px-3 py-2 bg-paper border border-ink/30 rounded-[8px] text-ink focus:outline-none focus:ring-2 focus:ring-tingub-blue font-normal"
             >
               <option value="teacher">Subject Teacher / Advisor</option>

@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/Button";
 export function AppHeader({
   title,
   onToggleSidebar,
+  user,
+  onSignOut,
 }: {
   title: string;
   onToggleSidebar: () => void;
   sidebarCollapsed?: boolean;
+  user?: { email?: string; full_name?: string } | null;
+  onSignOut?: () => void;
 }) {
   const [time, setTime] = useState(new Date());
 
@@ -28,10 +32,18 @@ export function AppHeader({
     });
   };
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-tingub-green text-white">
       <div className="flex items-center justify-between px-4 py-3 lg:px-6">
-        {/* Left: Toggle + Title */}
         <div className="flex items-center gap-4">
           <Button
             variant="secondary"
@@ -50,14 +62,30 @@ export function AppHeader({
           </div>
         </div>
 
-        {/* Right: Badge + Clock */}
         <div className="flex items-center gap-4">
           <span className="hidden md:inline-flex items-center rounded-[8px] bg-white/10 border border-white/20 px-3 py-1 text-xs font-medium">
             TINGUB NATIONAL HIGH SCHOOL
           </span>
           <div className="font-mono text-sm font-bold bg-white/10 rounded-[8px] px-3 py-1 border border-white/20">
-            {formatTime(time)}
+            {formatDate(time)} | {formatTime(time)}
           </div>
+          {user && (
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline-flex text-xs text-white/80 font-normal">
+                {user.email || user.full_name}
+              </span>
+              {onSignOut && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onSignOut}
+                  className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20"
+                >
+                  Sign out
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>

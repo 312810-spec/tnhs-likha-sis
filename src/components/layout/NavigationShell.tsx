@@ -1,40 +1,68 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { AppHeader } from "@/components/layout/Header";
+import { Sidebar } from "./Sidebar";
+import { AppHeader } from "./Header";
+import { useAuth } from "@/contexts/AuthContext";
 
 const VIEW_TITLES: Record<string, string> = {
-  "/(sis)": "DASHBOARD",
-  "/(sis)/grade-center": "GRADE CENTER",
-  "/(sis)/composite-grades": "COMPOSITE-GRADES",
-  "/(sis)/reports": "REPORTS & ANALYTICS",
-  "/(sis)/reports?form=sf10": "SF10 PREVIEW",
-  "/(sis)/reports?form=sf9": "SF9 PREVIEW",
-  "/(sis)/reports?form=sf8": "SF8 HEALTH RECORD",
-  "/(sis)/reports?form=sf2": "SF2 ATTENDANCE",
-  "/(sis)/individual-academic": "INDIVIDUAL-ACADEMIC",
-  "/(sis)/certificate-generator": "CERTIFICATE GENERATOR",
-  "/enrollment": "ENROLLMENT",
+  "/teacher": "TEACHER DASHBOARD",
+  "/teacher/grade-center": "GRADE CENTER",
+  "/teacher/composite-grades": "COMPOSITE GRADES",
+  "/teacher/reports": "REPORTS & ANALYTICS",
+  "/teacher/individual-academic": "INDIVIDUAL ACADEMIC",
+  "/teacher/certificate-generator": "CERTIFICATE GENERATOR",
+  "/teacher/anecdotal": "ANECDOTAL RECORDS",
+  "/master-teacher": "MASTER TEACHER DASHBOARD",
+  "/master-teacher/grade-center": "GRADE CENTER",
+  "/master-teacher/composite-grades": "COMPOSITE GRADES",
+  "/master-teacher/reports": "REPORTS & ANALYTICS",
+  "/master-teacher/individual-academic": "INDIVIDUAL ACADEMIC",
+  "/master-teacher/certificate-generator": "CERTIFICATE GENERATOR",
+  "/master-teacher/anecdotal": "ANECDOTAL RECORDS",
+  "/master-teacher/review": "REVIEW & APPROVAL",
+  "/ict": "ICT COORDINATOR DASHBOARD",
+  "/ict/enrollment": "ENROLLMENT",
+  "/ict/accounts": "ACCOUNT MANAGEMENT",
+  "/ict/grade-center": "GRADE CENTER",
+  "/ict/composite-grades": "COMPOSITE GRADES",
+  "/ict/reports": "REPORTS & ANALYTICS",
+  "/ict/forms": "FORMS & IDS",
+  "/ict/id-generator": "STUDENT ID GENERATOR",
   "/principal": "PRINCIPAL DASHBOARD",
-  "/ict": "ACCOUNT MANAGEMENT",
+  "/principal/enrollment": "ENROLLMENT",
+  "/principal/grade-center": "GRADE CENTER",
+  "/principal/composite-grades": "COMPOSITE GRADES",
+  "/principal/reports": "REPORTS & ANALYTICS",
+  "/principal/forms": "FORMS & IDS",
+  "/principal/anecdotal": "ANECDOTAL RECORDS",
+  "/stakeholder": "STAKEHOLDER PORTAL",
+  "/stakeholder/progress-card": "PROGRESS CARD",
+  "/stakeholder/anecdotal": "ANECDOTAL RECORDS",
 };
 
-export function NavigationShell({ children }: { children: React.ReactNode }) {
+export function NavigationShell({ 
+  children, 
+  navItems,
+}: { 
+  children: React.ReactNode;
+  navItems: { key: string; label: string; href: string; icon?: React.ReactNode }[];
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
 
-  // Get current path and search params for title
-  const pathname = typeof window !== "undefined" ? window.location.pathname : "/(sis)";
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
   const search = typeof window !== "undefined" ? window.location.search : "";
   const fullPath = pathname + search;
 
-  const title = VIEW_TITLES[fullPath] || VIEW_TITLES[pathname] || "INDIVIDUAL-ACADEMIC";
+  const title = VIEW_TITLES[fullPath] || VIEW_TITLES[pathname] || "DASHBOARD";
 
   return (
     <div className="min-h-screen bg-paper text-ink">
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        items={navItems}
       />
       <div
         className={`transition-all duration-300 ${
@@ -45,6 +73,8 @@ export function NavigationShell({ children }: { children: React.ReactNode }) {
           title={title}
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           sidebarCollapsed={sidebarCollapsed}
+          user={user}
+          onSignOut={signOut}
         />
         <main className="p-4 lg:p-6">{children}</main>
       </div>

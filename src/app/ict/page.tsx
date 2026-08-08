@@ -1,46 +1,59 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { AccountManagementForm } from "@/components/ict/AccountManagementForm";
 
-export default function IctCoordinatorPage() {
+export default function IctDashboard() {
   return (
-    <div className="min-h-screen bg-paper text-ink flex flex-col">
-      <header className="border-b border-ink/15 bg-paper px-6 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-[8px] bg-tingub-blue text-paper flex items-center justify-center font-bold text-sm">
-                TN
-              </span>
-              <h1 className="text-xl font-bold tracking-tight text-ink">
-                ICT Coordinator — Account Management
-              </h1>
-            </div>
-            <p className="text-xs text-ink/70 mt-0.5 font-normal">
-              Provision teacher / master_teacher accounts through a server-side Edge Function • Service role key never reaches the browser • DepEd Order No. 015, s. 2026
-            </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-ink">ICT Coordinator Dashboard</h1>
+        <p className="text-sm text-ink/60 font-normal">
+          System administration, enrollment, and account management
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <Link href="/ict/enrollment">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Enrollment</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">SF10 upload & learner verification</p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <Button variant="secondary" size="sm">
-                Return to Dashboard
-              </Button>
-            </Link>
+        </Link>
+        <Link href="/ict/accounts">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Account Management</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Provision teacher accounts</p>
           </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        <AccountManagementForm />
-      </main>
-
-      <footer className="border-t border-ink/15 bg-paper px-6 py-4 text-center text-xs text-ink/60 font-normal">
-        Tingub National High School Information System (TNHS LIKHA-SIS) • DepEd Order No. 015, s. 2026 Architecture
-      </footer>
+        </Link>
+        <Link href="/ict/grade-center">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Grade Center</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Oversee grade encoding</p>
+          </div>
+        </Link>
+        <Link href="/ict/composite-grades">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Composite Grades</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Full grade registry</p>
+          </div>
+        </Link>
+        <Link href="/ict/reports">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Reports & Analytics</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Generate DepEd forms</p>
+          </div>
+        </Link>
+        <Link href="/ict/forms">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Forms & IDs</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Official school forms</p>
+          </div>
+        </Link>
+        <Link href="/ict/id-generator">
+          <div className="rounded-[8px] border border-ink/15 bg-paper p-5 hover:border-tingub-blue/50 transition-colors cursor-pointer">
+            <h3 className="text-sm font-bold text-ink">Student ID Generator</h3>
+            <p className="text-xs text-ink/60 font-normal mt-1">Generate ID cards with QR</p>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }
